@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "SponsorshipOS"
+version = "1.0.0"
+id = "artifacts/sponsorship-os"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26101
+
+[services.development]
+run = "pnpm --filter @workspace/sponsorship-os run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sponsorship-os", "run", "build" ]
+publicDir = "artifacts/sponsorship-os/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26101"
+BASE_PATH = "/"

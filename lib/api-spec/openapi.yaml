@@ -3,20 +3,46 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SponsorshipOS API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Dashboard summary data
+  - name: contracts
+    description: Contract management
+  - name: milestones
+    description: Milestone management
+  - name: invoices
+    description: Invoice management
+  - name: tax
+    description: Tax reserve management
+  - name: performance
+    description: Performance reports
+  - name: sentiment
+    description: Brand communication sentiment analysis
+  - name: youtube
+    description: YouTube integration
+  - name: notion
+    description: Notion integration
+  - name: settings
+    description: User settings and integrations
+  - name: billing
+    description: Subscription billing
+  - name: cron
+    description: Scheduled jobs
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +50,944 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # AUTH
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user and creator profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithProfile"
+        "401":
+          description: Unauthorized
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Email/password login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/google:
+    get:
+      operationId: googleAuthInit
+      tags: [auth]
+      summary: Initiate Google OAuth
+      responses:
+        "302":
+          description: Redirect to Google
+
+  /auth/google/callback:
+    get:
+      operationId: googleAuthCallback
+      tags: [auth]
+      summary: Google OAuth callback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  /auth/onboarding:
+    post:
+      operationId: completeOnboarding
+      tags: [auth]
+      summary: Save onboarding data and create creator profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingBody"
+      responses:
+        "200":
+          description: Onboarding complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorProfile"
+
+  # DASHBOARD
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/upcoming:
+    get:
+      operationId: getUpcomingMilestones
+      tags: [dashboard]
+      summary: Get milestones due in next 14 days
+      responses:
+        "200":
+          description: Upcoming milestones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Milestone"
+
+  /dashboard/risk-alerts:
+    get:
+      operationId: getRiskAlerts
+      tags: [dashboard]
+      summary: Get overdue milestones and risk flag alerts
+      responses:
+        "200":
+          description: Risk alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskAlerts"
+
+  /dashboard/income-trend:
+    get:
+      operationId: getIncomeTrend
+      tags: [dashboard]
+      summary: Get monthly income trend from paid invoices
+      responses:
+        "200":
+          description: Monthly income trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyIncome"
+
+  /dashboard/sentiment-snapshot:
+    get:
+      operationId: getSentimentSnapshot
+      tags: [dashboard]
+      summary: Get last 5 brand communication analyses
+      responses:
+        "200":
+          description: Recent sentiment analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommunicationAnalysis"
+
+  # CONTRACTS
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List all contracts for user
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, cancelled, paused]
+      responses:
+        "200":
+          description: Contracts list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractWithExtraction"
+
+  /contracts/upload:
+    post:
+      operationId: uploadContract
+      tags: [contracts]
+      summary: Upload contract PDF and trigger AI extraction
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                title:
+                  type: string
+              required: [file]
+      responses:
+        "201":
+          description: Contract created, extraction pending
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get contract with extraction data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contract with extraction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractWithExtraction"
+    patch:
+      operationId: updateContract
+      tags: [contracts]
+      summary: Update contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateContractBody"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+    delete:
+      operationId: deleteContract
+      tags: [contracts]
+      summary: Delete contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /contracts/{id}/reprocess:
+    post:
+      operationId: reprocessContract
+      tags: [contracts]
+      summary: Re-trigger AI extraction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reprocessing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}/extraction:
+    patch:
+      operationId: updateExtraction
+      tags: [contracts]
+      summary: Update AI extraction data (user corrections)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExtractionBody"
+      responses:
+        "200":
+          description: Updated extraction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractExtraction"
+
+  # MILESTONES
+  /contracts/{id}/milestones:
+    get:
+      operationId: listMilestones
+      tags: [milestones]
+      summary: List milestones for a contract
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Milestones list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Milestone"
+    post:
+      operationId: createMilestone
+      tags: [milestones]
+      summary: Create a milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMilestoneBody"
+      responses:
+        "201":
+          description: Created milestone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+
+  /milestones/{id}:
+    get:
+      operationId: getMilestone
+      tags: [milestones]
+      summary: Get a milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Milestone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+    patch:
+      operationId: updateMilestone
+      tags: [milestones]
+      summary: Update milestone (status, sortOrder, contentUrl, etc.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMilestoneBody"
+      responses:
+        "200":
+          description: Updated milestone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+    delete:
+      operationId: deleteMilestone
+      tags: [milestones]
+      summary: Delete milestone
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  # INVOICES
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List invoices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, sent, paid, failed, cancelled]
+        - name: contractId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoices list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create and send invoice via Stripe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInvoiceBody"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      summary: Update invoice (cancel, etc.)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInvoiceBody"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  # TAX
+  /tax:
+    get:
+      operationId: getTaxSummary
+      tags: [tax]
+      summary: Get tax reserve summary
+      responses:
+        "200":
+          description: Tax summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaxSummary"
+
+  /tax/history:
+    get:
+      operationId: getTaxHistory
+      tags: [tax]
+      summary: Get monthly tax reserve breakdown
+      responses:
+        "200":
+          description: Monthly breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaxReserveEntry"
+
+  # PERFORMANCE
+  /performance/verify/{milestoneId}:
+    post:
+      operationId: verifyMilestoneCompliance
+      tags: [performance]
+      summary: Run YouTube compliance check for a milestone
+      parameters:
+        - name: milestoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Compliance check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplianceResult"
+
+  /performance/report/{contractId}:
+    post:
+      operationId: generatePerformanceReport
+      tags: [performance]
+      summary: Generate AI performance report for a contract
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceReport"
+    get:
+      operationId: getPerformanceReport
+      tags: [performance]
+      summary: Get saved performance report
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Performance report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceReport"
+
+  /shared/report/{token}:
+    get:
+      operationId: getPublicReport
+      tags: [performance]
+      summary: Get public performance report by share token (no auth)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public performance report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceReport"
+
+  # SENTIMENT
+  /sentiment/analyze:
+    post:
+      operationId: analyzeSentiment
+      tags: [sentiment]
+      summary: Analyze brand communication sentiment with AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SentimentAnalyzeBody"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommunicationAnalysis"
+
+  /sentiment/{contractId}:
+    get:
+      operationId: listSentimentAnalyses
+      tags: [sentiment]
+      summary: Get sentiment analysis history for a contract
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Analysis history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommunicationAnalysis"
+
+  # YOUTUBE
+  /youtube/channels:
+    get:
+      operationId: getYoutubeChannel
+      tags: [youtube]
+      summary: Get connected YouTube channel info
+      responses:
+        "200":
+          description: Channel info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YoutubeChannel"
+
+  /youtube/videos:
+    get:
+      operationId: getYoutubeVideos
+      tags: [youtube]
+      summary: Get recent YouTube videos
+      responses:
+        "200":
+          description: Recent videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/YoutubeVideo"
+
+  /auth/youtube:
+    get:
+      operationId: youtubeAuthInit
+      tags: [youtube]
+      summary: Initiate YouTube OAuth
+      responses:
+        "302":
+          description: Redirect to Google
+
+  /auth/youtube/callback:
+    get:
+      operationId: youtubeAuthCallback
+      tags: [youtube]
+      summary: YouTube OAuth callback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  /auth/tiktok:
+    get:
+      operationId: tiktokAuthInit
+      tags: [settings]
+      summary: Initiate TikTok OAuth
+      responses:
+        "302":
+          description: Redirect to TikTok
+
+  /auth/tiktok/callback:
+    get:
+      operationId: tiktokAuthCallback
+      tags: [settings]
+      summary: TikTok OAuth callback
+      parameters:
+        - name: code
+          in: query
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect after auth
+
+  # NOTION
+  /notion/export/contract/{contractId}:
+    post:
+      operationId: exportContractToNotion
+      tags: [notion]
+      summary: Export contract to Notion
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotionExportBody"
+      responses:
+        "200":
+          description: Export result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionExportResult"
+
+  /notion/export/milestones/{contractId}:
+    post:
+      operationId: exportMilestonesToNotion
+      tags: [notion]
+      summary: Export milestones to Notion
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotionExportBody"
+      responses:
+        "200":
+          description: Export result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionExportResult"
+
+  /notion/export/report/{contractId}:
+    post:
+      operationId: exportReportToNotion
+      tags: [notion]
+      summary: Export performance report to Notion
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotionExportBody"
+      responses:
+        "200":
+          description: Export result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionExportResult"
+
+  # SETTINGS
+  /settings/profile:
+    get:
+      operationId: getProfile
+      tags: [settings]
+      summary: Get creator profile
+      responses:
+        "200":
+          description: Creator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorProfile"
+    patch:
+      operationId: updateProfile
+      tags: [settings]
+      summary: Update creator profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatorProfile"
+
+  /settings/integrations:
+    get:
+      operationId: getIntegrations
+      tags: [settings]
+      summary: Get all integration statuses
+      responses:
+        "200":
+          description: Integration statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationsStatus"
+
+  /settings/integrations/{provider}/disconnect:
+    post:
+      operationId: disconnectIntegration
+      tags: [settings]
+      summary: Disconnect an integration
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [youtube, tiktok, notion, stripe]
+      responses:
+        "200":
+          description: Disconnected
+
+  /settings/api-status:
+    get:
+      operationId: getApiStatus
+      tags: [settings]
+      summary: Get API key configuration status
+      responses:
+        "200":
+          description: API key statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiKeyStatus"
+
+  # BILLING
+  /billing/create-checkout:
+    post:
+      operationId: createCheckoutSession
+      tags: [billing]
+      summary: Create Stripe Checkout session for Pro plan
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required: [url]
+
+  /billing/portal:
+    get:
+      operationId: getBillingPortal
+      tags: [billing]
+      summary: Get Stripe customer portal URL
+      responses:
+        "200":
+          description: Portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                required: [url]
+
+  /webhooks/stripe:
+    post:
+      operationId: stripeWebhook
+      tags: [billing]
+      summary: Stripe webhook handler
+      responses:
+        "200":
+          description: Webhook handled
+
+  /cron/reminders:
+    post:
+      operationId: runReminderCron
+      tags: [cron]
+      summary: Run milestone reminder email job (protected by CRON_SECRET header)
+      responses:
+        "200":
+          description: Reminders processed
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +995,773 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    RegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+      required: [email, password, name]
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        needsOnboarding:
+          type: boolean
+      required: [token, user, needsOnboarding]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        image:
+          type: string
+        createdAt:
+          type: string
+      required: [id, email]
+
+    UserWithProfile:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        profile:
+          $ref: "#/components/schemas/CreatorProfile"
+        needsOnboarding:
+          type: boolean
+      required: [user, needsOnboarding]
+
+    CreatorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        businessName:
+          type: string
+        country:
+          type: string
+        defaultCurrency:
+          type: string
+        taxReservePercent:
+          type: integer
+        paymentTermsDays:
+          type: integer
+        niche:
+          type: string
+        averageSponsorshipValue:
+          type: string
+        subscriptionPlan:
+          type: string
+          enum: [starter, pro, agency]
+        subscriptionStatus:
+          type: string
+        createdAt:
+          type: string
+      required: [id, userId, subscriptionPlan]
+
+    OnboardingBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        country:
+          type: string
+        defaultCurrency:
+          type: string
+        paymentTermsDays:
+          type: integer
+        niche:
+          type: string
+        taxReservePercent:
+          type: integer
+        averageSponsorshipValue:
+          type: string
+      required: [name, businessName, country]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalContractValue:
+          type: string
+        paidRevenue:
+          type: string
+        pendingInvoicesCount:
+          type: integer
+        pendingInvoicesTotal:
+          type: string
+        taxReserveTotal:
+          type: string
+        activeContractsCount:
+          type: integer
+        overdueMilestonesCount:
+          type: integer
+      required: [totalContractValue, paidRevenue, pendingInvoicesCount, pendingInvoicesTotal, taxReserveTotal, activeContractsCount, overdueMilestonesCount]
+
+    MonthlyIncome:
+      type: object
+      properties:
+        month:
+          type: string
+        amount:
+          type: string
+      required: [month, amount]
+
+    RiskAlerts:
+      type: object
+      properties:
+        overdueMilestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Milestone"
+        riskFlagContracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractWithExtraction"
+      required: [overdueMilestones, riskFlagContracts]
+
+    Contract:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, cancelled, paused]
+        originalFilename:
+          type: string
+        fileUrl:
+          type: string
+        fileSize:
+          type: integer
+        aiProcessingStatus:
+          type: string
+          enum: [pending, processing, complete, failed]
+        aiError:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, userId, title, status, aiProcessingStatus, createdAt, updatedAt]
+
+    ContractExtraction:
+      type: object
+      properties:
+        id:
+          type: string
+        contractId:
+          type: string
+        brandName:
+          type: string
+        creatorName:
+          type: string
+        campaignName:
+          type: string
+        totalPayment:
+          type: string
+        currency:
+          type: string
+        paymentSchedule:
+          type: array
+          items:
+            type: object
+        deliverables:
+          type: array
+          items:
+            type: object
+        deadlines:
+          type: array
+          items:
+            type: object
+        platforms:
+          type: array
+          items:
+            type: string
+        requiredHashtags:
+          type: array
+          items:
+            type: string
+        requiredMentions:
+          type: array
+          items:
+            type: string
+        requiredLinks:
+          type: array
+          items:
+            type: object
+        approvalRequirements:
+          type: string
+        revisionTerms:
+          type: string
+        usageRights:
+          type: string
+        exclusivityClauses:
+          type: string
+        latePaymentTerms:
+          type: string
+        cancellationTerms:
+          type: string
+        riskFlags:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskFlag"
+        aiSummary:
+          type: string
+        editedByUser:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, contractId, createdAt, updatedAt]
+
+    RiskFlag:
+      type: object
+      properties:
+        flag:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high]
+        clause:
+          type: string
+      required: [flag, severity]
+
+    ContractWithExtraction:
+      type: object
+      properties:
+        contract:
+          $ref: "#/components/schemas/Contract"
+        extraction:
+          $ref: "#/components/schemas/ContractExtraction"
+        milestonesCount:
+          type: integer
+        notionExports:
+          type: array
+          items:
+            type: object
+      required: [contract]
+
+    UpdateContractBody:
+      type: object
+      properties:
+        title:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, cancelled, paused]
+
+    UpdateExtractionBody:
+      type: object
+      properties:
+        brandName:
+          type: string
+        creatorName:
+          type: string
+        campaignName:
+          type: string
+        totalPayment:
+          type: string
+        currency:
+          type: string
+        paymentSchedule:
+          type: array
+          items:
+            type: object
+        deliverables:
+          type: array
+          items:
+            type: object
+        requiredHashtags:
+          type: array
+          items:
+            type: string
+        requiredMentions:
+          type: array
+          items:
+            type: string
+        requiredLinks:
+          type: array
+          items:
+            type: object
+        riskFlags:
+          type: array
+          items:
+            $ref: "#/components/schemas/RiskFlag"
+        aiSummary:
+          type: string
+
+    Milestone:
+      type: object
+      properties:
+        id:
+          type: string
+        contractId:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        platform:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [contract_received, planning, content_due, posted, awaiting_approval, invoice_ready, paid, overdue]
+        requiredHashtags:
+          type: array
+          items:
+            type: string
+        requiredMentions:
+          type: array
+          items:
+            type: string
+        requiredLinks:
+          type: array
+          items:
+            type: object
+        paymentAmount:
+          type: string
+        requiresApproval:
+          type: boolean
+        approvalStatus:
+          type: string
+          enum: [pending, approved, rejected]
+        contentUrl:
+          type: string
+        complianceStatus:
+          type: string
+          enum: [unverified, verified, missing_hashtag, missing_mention, missing_link, late, needs_review]
+        sortOrder:
+          type: integer
+        contractTitle:
+          type: string
+        brandName:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, contractId, userId, title, status, createdAt, updatedAt]
+
+    CreateMilestoneBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        platform:
+          type: string
+        dueDate:
+          type: string
+        paymentAmount:
+          type: string
+        requiresApproval:
+          type: boolean
+        requiredHashtags:
+          type: array
+          items:
+            type: string
+        requiredMentions:
+          type: array
+          items:
+            type: string
+        requiredLinks:
+          type: array
+          items:
+            type: object
+      required: [title]
+
+    UpdateMilestoneBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        platform:
+          type: string
+        dueDate:
+          type: string
+        status:
+          type: string
+          enum: [contract_received, planning, content_due, posted, awaiting_approval, invoice_ready, paid, overdue]
+        paymentAmount:
+          type: string
+        requiresApproval:
+          type: boolean
+        approvalStatus:
+          type: string
+          enum: [pending, approved, rejected]
+        contentUrl:
+          type: string
+        complianceStatus:
+          type: string
+          enum: [unverified, verified, missing_hashtag, missing_mention, missing_link, late, needs_review]
+        sortOrder:
+          type: integer
+        requiredHashtags:
+          type: array
+          items:
+            type: string
+        requiredMentions:
+          type: array
+          items:
+            type: string
+        requiredLinks:
+          type: array
+          items:
+            type: object
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        contractId:
+          type: string
+        milestoneId:
+          type: string
+        stripeInvoiceId:
+          type: string
+        stripeInvoiceUrl:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, paid, failed, cancelled]
+        amount:
+          type: string
+        currency:
+          type: string
+        platformFee:
+          type: string
+        netAmount:
+          type: string
+        brandName:
+          type: string
+        brandEmail:
+          type: string
+        dueDate:
+          type: string
+        paidAt:
+          type: string
+        notes:
+          type: string
+        contractTitle:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, userId, status, amount, currency, createdAt, updatedAt]
+
+    CreateInvoiceBody:
+      type: object
+      properties:
+        contractId:
+          type: string
+        milestoneId:
+          type: string
+        amount:
+          type: string
+        currency:
+          type: string
+        brandName:
+          type: string
+        brandEmail:
+          type: string
+        dueDate:
+          type: string
+        notes:
+          type: string
+      required: [contractId, amount, brandName, brandEmail]
+
+    UpdateInvoiceBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, sent, paid, failed, cancelled]
+        notes:
+          type: string
+
+    TaxSummary:
+      type: object
+      properties:
+        totalGrossIncome:
+          type: string
+        totalPlatformFees:
+          type: string
+        totalNetIncome:
+          type: string
+        totalTaxReserve:
+          type: string
+        totalAvailableBalance:
+          type: string
+      required: [totalGrossIncome, totalPlatformFees, totalNetIncome, totalTaxReserve, totalAvailableBalance]
+
+    TaxReserveEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        invoiceId:
+          type: string
+        grossAmount:
+          type: string
+        platformFee:
+          type: string
+        netAmount:
+          type: string
+        reservePercent:
+          type: integer
+        reserveAmount:
+          type: string
+        availableBalance:
+          type: string
+        period:
+          type: string
+        createdAt:
+          type: string
+      required: [id, grossAmount, netAmount, reserveAmount, availableBalance, createdAt]
+
+    ComplianceResult:
+      type: object
+      properties:
+        milestoneId:
+          type: string
+        complianceStatus:
+          type: string
+        contentUrl:
+          type: string
+        matchedVideo:
+          type: object
+        checks:
+          type: object
+      required: [milestoneId, complianceStatus]
+
+    PerformanceReport:
+      type: object
+      properties:
+        id:
+          type: string
+        contractId:
+          type: string
+        campaignName:
+          type: string
+        brandName:
+          type: string
+        reportData:
+          type: object
+        complianceScore:
+          type: integer
+        sharedToken:
+          type: string
+        generatedAt:
+          type: string
+      required: [id, contractId, complianceScore, sharedToken, generatedAt]
+
+    SentimentAnalyzeBody:
+      type: object
+      properties:
+        contractId:
+          type: string
+        rawInput:
+          type: string
+      required: [rawInput]
+
+    CommunicationAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+        contractId:
+          type: string
+        rawInput:
+          type: string
+        sentiment:
+          type: string
+          enum: [positive, neutral, negative, mixed]
+        urgencyLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        paymentRisk:
+          type: string
+          enum: [low, medium, high]
+        scopeCreepRisk:
+          type: string
+          enum: [low, medium, high]
+        toneRecommendation:
+          type: string
+        suggestedReply:
+          type: string
+        fullAnalysis:
+          type: object
+        createdAt:
+          type: string
+      required: [id, rawInput, sentiment, urgencyLevel, paymentRisk, scopeCreepRisk, createdAt]
+
+    YoutubeChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        subscriberCount:
+          type: string
+        videoCount:
+          type: string
+        viewCount:
+          type: string
+      required: [id, title]
+
+    YoutubeVideo:
+      type: object
+      properties:
+        videoId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        publishedAt:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required: [videoId, title, publishedAt, url]
+
+    IntegrationsStatus:
+      type: object
+      properties:
+        youtube:
+          $ref: "#/components/schemas/IntegrationStatus"
+        tiktok:
+          $ref: "#/components/schemas/IntegrationStatus"
+        notion:
+          $ref: "#/components/schemas/IntegrationStatus"
+        stripe:
+          $ref: "#/components/schemas/IntegrationStatus"
+        resend:
+          $ref: "#/components/schemas/IntegrationStatus"
+      required: [youtube, tiktok, notion, stripe, resend]
+
+    IntegrationStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [connected, not_connected, requires_setup, error]
+        accountName:
+          type: string
+        accountDetails:
+          type: string
+        errorMessage:
+          type: string
+        requiresApproval:
+          type: boolean
+        setupInstructions:
+          type: string
+      required: [status]
+
+    ApiKeyStatus:
+      type: object
+      properties:
+        anthropic:
+          type: boolean
+        stripe:
+          type: boolean
+        resend:
+          type: boolean
+        youtubeClient:
+          type: boolean
+        tiktokClient:
+          type: boolean
+        notion:
+          type: boolean
+      required: [anthropic, stripe, resend, youtubeClient, tiktokClient, notion]
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        businessName:
+          type: string
+        country:
+          type: string
+        defaultCurrency:
+          type: string
+        paymentTermsDays:
+          type: integer
+        niche:
+          type: string
+        taxReservePercent:
+          type: integer
+        averageSponsorshipValue:
+          type: string
+
+    NotionExportBody:
+      type: object
+      properties:
+        databaseId:
+          type: string
+      required: [databaseId]
+
+    NotionExportResult:
+      type: object
+      properties:
+        notionPageId:
+          type: string
+        notionUrl:
+          type: string
+        status:
+          type: string
+      required: [status]
