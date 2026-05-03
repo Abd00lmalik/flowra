@@ -16,7 +16,7 @@ async function getNotionToken(userId: string): Promise<string | null> {
 router.post("/notion/export/contract/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
     const { databaseId } = req.body;
     if (!databaseId) { res.status(400).json({ error: "databaseId is required" }); return; }
 
@@ -71,7 +71,8 @@ router.post("/notion/export/contract/:contractId", requireAuth, async (req, res)
     res.json({ notionPageId: notionPage.id, notionUrl: notionPage.url, status: "success" });
   } catch (err) {
     logger.error({ err }, "Notion export error");
-    await db.insert(notionExportsTable).values({ userId: (req as any).userId, contractId: req.params.contractId, exportType: "contract", status: "failed" });
+    const contractIdParam = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
+    await db.insert(notionExportsTable).values({ userId: (req as any).userId, contractId: contractIdParam, exportType: "contract", status: "failed" });
     res.status(500).json({ error: "Export failed" });
   }
 });
@@ -79,7 +80,7 @@ router.post("/notion/export/contract/:contractId", requireAuth, async (req, res)
 router.post("/notion/export/milestones/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
     const { databaseId } = req.body;
     if (!databaseId) { res.status(400).json({ error: "databaseId is required" }); return; }
 
@@ -114,7 +115,7 @@ router.post("/notion/export/milestones/:contractId", requireAuth, async (req, re
 router.post("/notion/export/report/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
     const { databaseId } = req.body;
     if (!databaseId) { res.status(400).json({ error: "databaseId is required" }); return; }
 

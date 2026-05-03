@@ -12,7 +12,7 @@ const router = Router();
 router.post("/performance/verify/:milestoneId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { milestoneId } = req.params;
+    const milestoneId = Array.isArray(req.params.milestoneId) ? req.params.milestoneId[0] : req.params.milestoneId;
 
     const [milestone] = await db.select().from(milestonesTable).where(and(eq(milestonesTable.id, milestoneId), eq(milestonesTable.userId, userId))).limit(1);
     if (!milestone) { res.status(404).json({ error: "Milestone not found" }); return; }
@@ -95,7 +95,7 @@ router.post("/performance/verify/:milestoneId", requireAuth, async (req, res) =>
 router.post("/performance/report/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
 
     const [contract] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, contractId), eq(contractsTable.userId, userId))).limit(1);
     if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
@@ -138,7 +138,7 @@ router.post("/performance/report/:contractId", requireAuth, async (req, res) => 
 router.get("/performance/report/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!UUID_RE.test(contractId)) { res.status(404).json({ error: "No report found" }); return; }
     const [report] = await db.select().from(performanceReportsTable).where(and(eq(performanceReportsTable.contractId, contractId), eq(performanceReportsTable.userId, userId))).limit(1);

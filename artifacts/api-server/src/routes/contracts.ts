@@ -73,7 +73,7 @@ router.post("/contracts/upload", requireAuth, upload.single("file"), async (req,
 router.get("/contracts/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [result] = await db
       .select({ contract: contractsTable, extraction: contractExtractionsTable })
@@ -94,7 +94,7 @@ router.get("/contracts/:id", requireAuth, async (req, res) => {
 router.patch("/contracts/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { title, status } = req.body;
 
     const [existing] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
@@ -110,7 +110,7 @@ router.patch("/contracts/:id", requireAuth, async (req, res) => {
 router.delete("/contracts/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [existing] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
@@ -127,7 +127,7 @@ router.delete("/contracts/:id", requireAuth, async (req, res) => {
 router.post("/contracts/:id/reprocess", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [contract] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
     if (!contract) { res.status(404).json({ error: "Not found" }); return; }
@@ -152,7 +152,7 @@ router.post("/contracts/:id/reprocess", requireAuth, async (req, res) => {
 router.patch("/contracts/:id/extraction", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [contract] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
     if (!contract) { res.status(404).json({ error: "Not found" }); return; }
@@ -183,8 +183,8 @@ async function processContractExtraction(contractId: string, fileBuffer: Buffer,
     // Parse PDF text
     let pdfText = "";
     try {
-      const pdfParse = await import("pdf-parse");
-      const parsed = await pdfParse.default(fileBuffer);
+      const pdfParse = (await import("pdf-parse") as any).default;
+      const parsed = await pdfParse(fileBuffer);
       pdfText = parsed.text;
     } catch (pdfErr) {
       logger.error({ pdfErr }, "PDF parse error, using fallback");

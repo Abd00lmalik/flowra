@@ -11,7 +11,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 router.get("/contracts/:id/milestones", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     if (!UUID_RE.test(id)) { res.status(404).json({ error: "Contract not found" }); return; }
 
     const [contract] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
@@ -27,7 +27,7 @@ router.get("/contracts/:id/milestones", requireAuth, async (req, res) => {
 router.post("/contracts/:id/milestones", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [contract] = await db.select().from(contractsTable).where(and(eq(contractsTable.id, id), eq(contractsTable.userId, userId))).limit(1);
     if (!contract) { res.status(404).json({ error: "Contract not found" }); return; }
@@ -53,7 +53,7 @@ router.post("/contracts/:id/milestones", requireAuth, async (req, res) => {
 router.get("/milestones/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const [milestone] = await db.select().from(milestonesTable).where(and(eq(milestonesTable.id, id), eq(milestonesTable.userId, userId))).limit(1);
     if (!milestone) { res.status(404).json({ error: "Not found" }); return; }
     res.json(milestone);
@@ -65,7 +65,7 @@ router.get("/milestones/:id", requireAuth, async (req, res) => {
 router.patch("/milestones/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
     const [existing] = await db.select().from(milestonesTable).where(and(eq(milestonesTable.id, id), eq(milestonesTable.userId, userId))).limit(1);
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
@@ -94,7 +94,7 @@ router.patch("/milestones/:id", requireAuth, async (req, res) => {
 router.delete("/milestones/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const [existing] = await db.select().from(milestonesTable).where(and(eq(milestonesTable.id, id), eq(milestonesTable.userId, userId))).limit(1);
     if (!existing) { res.status(404).json({ error: "Not found" }); return; }
     await db.delete(milestonesTable).where(eq(milestonesTable.id, id));

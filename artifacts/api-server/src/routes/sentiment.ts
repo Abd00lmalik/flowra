@@ -51,7 +51,7 @@ router.post("/sentiment/analyze", requireAuth, async (req, res) => {
 router.get("/sentiment/:contractId", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { contractId } = req.params;
+    const contractId = Array.isArray(req.params.contractId) ? req.params.contractId[0] : req.params.contractId;
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!UUID_RE.test(contractId)) { res.json([]); return; }
     const analyses = await db.select().from(communicationAnalysesTable)

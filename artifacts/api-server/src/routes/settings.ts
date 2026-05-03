@@ -105,7 +105,7 @@ router.get("/settings/integrations", requireAuth, async (req, res) => {
 router.post("/settings/integrations/:provider/disconnect", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { provider } = req.params;
+    const provider = Array.isArray(req.params.provider) ? req.params.provider[0] : req.params.provider;
     await db.update(connectedAccountsTable).set({ status: "pending", accessToken: null, refreshToken: null, updatedAt: new Date() } as any).where(and(eq(connectedAccountsTable.userId, userId), eq(connectedAccountsTable.provider, provider)));
     res.json({ success: true });
   } catch (err) {

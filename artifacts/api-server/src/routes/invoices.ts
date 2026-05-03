@@ -161,7 +161,7 @@ router.post("/invoices", requireAuth, async (req, res) => {
 router.get("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const [invoice] = await db.select().from(invoicesTable).where(and(eq(invoicesTable.id, id), eq(invoicesTable.userId, userId))).limit(1);
     if (!invoice) { res.status(404).json({ error: "Not found" }); return; }
     res.json(invoice);
@@ -173,7 +173,7 @@ router.get("/invoices/:id", requireAuth, async (req, res) => {
 router.patch("/invoices/:id", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId;
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { status, notes } = req.body;
 
     const [existing] = await db.select().from(invoicesTable).where(and(eq(invoicesTable.id, id), eq(invoicesTable.userId, userId))).limit(1);
