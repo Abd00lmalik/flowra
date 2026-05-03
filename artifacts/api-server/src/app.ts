@@ -1,10 +1,5 @@
 import { createRequire } from "node:module";
 import express from "express";
-import type {
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-  NextFunction,
-} from "express";
 import cors from "cors";
 import type { HttpLogger } from "pino-http";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -45,12 +40,13 @@ app.use("/api", router);
 app.use(
   (
     err: Error,
-    _req: ExpressRequest,
-    res: ExpressResponse,
-    _next: NextFunction
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction
   ) => {
     logger.error({ err }, "Unhandled request error");
-    res.status(500).json({ error: "Internal server error" });
+    res.statusCode = 500;
+    res.json({ error: "Internal server error" });
   }
 );
 
