@@ -85,33 +85,27 @@ This document lists all environment variables required for Flowra deployment on 
 
 ## Payments & Invoicing
 
-### Stripe (optional - currently in codebase but can be disabled):
+### Paystack (optional - gracefully disabled if not configured):
 
-**`STRIPE_SECRET_KEY`**
+**`PAYSTACK_SECRET_KEY`**
 - **Type**: Server-only secret
-- **Required**: No (optional; remove from codebase if not using)
-- **Description**: Stripe API secret key for invoicing and billing
-- **Where to get it**: [Stripe Dashboard](https://dashboard.stripe.com/)
-- **Note**: Used for creating invoices, managing subscriptions, and webhooks
+- **Required**: No (optional; enables invoice creation and subscription payments)
+- **Description**: Paystack secret key for server-side API calls
+- **Where to get it**: [Paystack Dashboard](https://dashboard.paystack.com/) → Settings → API Keys & Webhooks
+- **Note**: Used for creating payment requests, initializing transactions, and verifying webhooks via HMAC SHA512
 
-**`STRIPE_PUBLISHABLE_KEY`** (or `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`)
-- **Type**: Public variable
-- **Required**: No (optional; must use `NEXT_PUBLIC_` prefix if in frontend)
-- **Description**: Stripe publishable key (safe to expose)
-- **Where to get it**: [Stripe Dashboard](https://dashboard.stripe.com/)
+**`NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`**
+- **Type**: Public variable (safe to expose)
+- **Required**: No (optional; needed for frontend Paystack SDK if used)
+- **Description**: Paystack publishable key for client-side integration
+- **Where to get it**: Paystack Dashboard → Settings → API Keys & Webhooks
 
-**`STRIPE_WEBHOOK_SECRET`**
-- **Type**: Server-only secret
-- **Required**: No (optional; needed for webhook handling)
-- **Description**: Webhook signing secret for Stripe events
-- **Where to get it**: Stripe Dashboard → Webhooks section
-- **Used for**: Validating webhook events from Stripe
-
-**`STRIPE_PRO_PRICE_ID`**
+**`PAYSTACK_PRO_PLAN_CODE`**
 - **Type**: Standard environment variable
 - **Required**: No (optional)
-- **Default**: `price_pro_monthly`
-- **Description**: Stripe price ID for Pro subscription tier
+- **Description**: Paystack plan code for recurring Pro subscription tier
+- **Where to get it**: Paystack Dashboard → Products → Plans
+- **Note**: If set, transactions are tied to a plan for automatic subscription management
 
 ---
 
@@ -219,10 +213,9 @@ This document lists all environment variables required for Flowra deployment on 
 | `NODE_ENV` | No | Standard | Both | Core |
 | `GOOGLE_CLIENT_ID` | No | Public | Both | Auth |
 | `GOOGLE_CLIENT_SECRET` | No | Secret | Both | Auth |
-| `STRIPE_SECRET_KEY` | No | Secret | Both | Payments |
-| `STRIPE_PUBLISHABLE_KEY` | No | Public | Both | Payments |
-| `STRIPE_WEBHOOK_SECRET` | No | Secret | Both | Payments |
-| `STRIPE_PRO_PRICE_ID` | No | Standard | Both | Payments |
+| `PAYSTACK_SECRET_KEY` | No | Secret | Both | Payments |
+| `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | No | Public | Both | Payments |
+| `PAYSTACK_PRO_PLAN_CODE` | No | Standard | Both | Payments |
 | `RESEND_API_KEY` | No | Secret | Both | Email |
 | `FROM_EMAIL` | No | Standard | Both | Email |
 | `TIKTOK_CLIENT_KEY` | No | Secret | Both | Integration |
@@ -246,7 +239,7 @@ This document lists all environment variables required for Flowra deployment on 
 
 2. **Optional integrations to add:**
    - Google OAuth: Add `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
-   - Stripe: Add `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+   - Paystack: Add `PAYSTACK_SECRET_KEY` and optionally `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY`
    - Email: Add `RESEND_API_KEY` + `FROM_EMAIL`
    - Other integrations as needed
 
@@ -278,7 +271,7 @@ This document lists all environment variables required for Flowra deployment on 
 - If `ANTHROPIC_API_KEY` is missing, the app loads but AI features will fail at runtime with a clear error
 - If `DATABASE_URL` is missing during startup, the app will fail to start (expected)
 - If optional integrations are missing, the app shows a "Not configured" message in settings
-- Stripe, email, YouTube, TikTok, Notion integrations are all optional and gracefully disabled if secrets are missing
+- Paystack, email, YouTube, TikTok, Notion integrations are all optional and gracefully disabled if secrets are missing
 - The app never crashes due to missing optional env vars; it gracefully degrades
 
 ---
@@ -290,7 +283,7 @@ This document lists all environment variables required for Flowra deployment on 
 3. **Use separate API keys for development and production**.
 4. **Use Vercel's built-in secrets manager** for production deployments.
 5. **Never log or expose** `SESSION_SECRET`, `ANTHROPIC_API_KEY`, or other secret variables.
-6. **Verify webhook signatures** when using Stripe webhooks (Stripe webhook secret is used for this).
+6. **Verify webhook signatures** when using Paystack webhooks (HMAC SHA512 of request body with `PAYSTACK_SECRET_KEY`).
 7. **Use HTTPS only** for production to prevent credential interception.
 
 ---

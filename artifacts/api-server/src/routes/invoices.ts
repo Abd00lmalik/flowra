@@ -17,8 +17,8 @@ router.get("/invoices", requireAuth, async (req, res) => {
       userId: invoicesTable.userId,
       contractId: invoicesTable.contractId,
       milestoneId: invoicesTable.milestoneId,
-      stripeInvoiceId: invoicesTable.stripeInvoiceId,
-      stripeInvoiceUrl: invoicesTable.stripeInvoiceUrl,
+      paystackReference: invoicesTable.paystackReference,
+      paystackPaymentUrl: invoicesTable.paystackPaymentUrl,
       status: invoicesTable.status,
       amount: invoicesTable.amount,
       currency: invoicesTable.currency,
@@ -63,66 +63,48 @@ router.post("/invoices", requireAuth, async (req, res) => {
     const platformFee = isAgency ? grossAmount * 0.01 : 0;
     const netAmount = grossAmount - platformFee;
 
-    let stripeInvoiceId: string | undefined;
-    let stripeInvoiceUrl: string | undefined;
+    let paystackReference: string | undefined;
+    let paystackPaymentUrl: string | undefined;
 
-    // Attempt Stripe invoice creation
-    if (process.env.STRIPE_SECRET_KEY) {
+    if (process.env.PAYSTACK_SECRET_KEY) {
       try {
-        const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        const reference = `flowra_inv_${userId}_${Date.now()}`;
+        const amountInKobo = Math.round(grossAmount * 100);
 
-        // Find or create Stripe customer
-        let customerId = profile?.stripeCustomerId;
-        if (!customerId) {
-          const customer = await stripe.customers.create({ email: brandEmail, name: brandName });
-          customerId = customer.id;
-          if (profile) {
-            await db.update(creatorProfilesTable).set({ stripeCustomerId: customerId }).where(eq(creatorProfilesTable.userId, userId));
-          }
-        }
-
-        const daysUntilDue = profile?.paymentTermsDays || 30;
-        const invoice = await stripe.invoices.create({
-          customer: customerId,
-          auto_advance: false,
-          collection_method: "send_invoice",
-          days_until_due: daysUntilDue,
-          description: notes || `Sponsorship invoice from ${brandName}`,
+        const paystackRes = await fetch("https://api.paystack.co/paymentrequest", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customer: { email: brandEmail },
+            amount: amountInKobo,
+            description: notes || `Sponsorship invoice for ${brandName}`,
+            due_date: dueDate ? new Date(dueDate).toISOString().split("T")[0] : undefined,
+            line_items: [
+              { name: "Sponsorship fee", amount: amountInKobo, quantity: 1 },
+              ...(isAgency && platformFee > 0 ? [
+                { name: "Flowra platform fee (1%)", amount: Math.round(platformFee * 100), quantity: 1 }
+              ] : []),
+            ],
+          }),
         });
 
-        await stripe.invoiceItems.create({
-          customer: customerId,
-          invoice: invoice.id,
-          amount: Math.round(grossAmount * 100),
-          currency: (currency || "usd").toLowerCase(),
-          description: `Sponsorship fee`,
-        });
-
-        if (isAgency && platformFee > 0) {
-          await stripe.invoiceItems.create({
-            customer: customerId,
-            invoice: invoice.id,
-            amount: Math.round(platformFee * 100),
-            currency: (currency || "usd").toLowerCase(),
-            description: "SponsorshipOS platform fee (1%)",
-          });
+        const paystackData = await paystackRes.json() as any;
+        if (paystackData.status && paystackData.data) {
+          paystackReference = reference;
+          paystackPaymentUrl = paystackData.data.offline_reference || paystackData.data.payment_url || undefined;
         }
-
-        const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
-        await stripe.invoices.sendInvoice(finalizedInvoice.id);
-
-        stripeInvoiceId = finalizedInvoice.id;
-        stripeInvoiceUrl = finalizedInvoice.hosted_invoice_url || undefined;
-      } catch (stripeErr) {
-        logger.error({ stripeErr }, "Stripe invoice creation failed");
+      } catch (paystackErr) {
+        logger.error({ paystackErr }, "Paystack payment request creation failed");
       }
     }
 
     const [savedInvoice] = await db.insert(invoicesTable).values({
       userId, contractId, milestoneId,
-      stripeInvoiceId, stripeInvoiceUrl,
-      status: stripeInvoiceId ? "sent" : "draft",
+      paystackReference, paystackPaymentUrl,
+      status: paystackReference ? "sent" : "draft",
       amount: amount.toString(), currency: currency || "USD",
       platformFee: platformFee.toString(), netAmount: netAmount.toString(),
       brandName, brandEmail,
@@ -130,7 +112,6 @@ router.post("/invoices", requireAuth, async (req, res) => {
       notes,
     }).returning();
 
-    // Calculate and save tax reserve
     const reservePercent = profile?.taxReservePercent || 30;
     const reserveAmount = netAmount * (reservePercent / 100);
     const availableBalance = netAmount - reserveAmount;
@@ -146,7 +127,6 @@ router.post("/invoices", requireAuth, async (req, res) => {
       period,
     });
 
-    // Update milestone status
     if (milestoneId) {
       await db.update(milestonesTable).set({ status: "invoice_ready", updatedAt: new Date() }).where(eq(milestonesTable.id, milestoneId));
     }
@@ -187,61 +167,6 @@ router.patch("/invoices/:id", requireAuth, async (req, res) => {
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Failed" });
-  }
-});
-
-// Stripe webhook
-router.post("/webhooks/stripe", async (req, res) => {
-  try {
-    const sig = req.headers["stripe-signature"];
-    if (!process.env.STRIPE_SECRET_KEY || !sig) { res.status(400).send("Stripe not configured"); return; }
-
-    const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    let event;
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig as string, process.env.STRIPE_WEBHOOK_SECRET || "");
-    } catch {
-      res.status(400).send("Webhook signature verification failed");
-      return;
-    }
-
-    const stripeInvoice = event.data.object as any;
-    const stripeInvoiceId = stripeInvoice.id;
-
-    if (["invoice.paid", "invoice.payment_failed", "invoice.voided", "invoice.sent"].includes(event.type)) {
-      const statusMap: Record<string, string> = {
-        "invoice.paid": "paid",
-        "invoice.payment_failed": "failed",
-        "invoice.voided": "cancelled",
-        "invoice.sent": "sent",
-      };
-      const newStatus = statusMap[event.type];
-      const updates: Record<string, unknown> = { status: newStatus, updatedAt: new Date() };
-      if (event.type === "invoice.paid") updates["paidAt"] = new Date();
-
-      await db.update(invoicesTable).set(updates as any).where(eq(invoicesTable.stripeInvoiceId, stripeInvoiceId));
-
-      if (event.type === "invoice.paid") {
-        const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.stripeInvoiceId, stripeInvoiceId)).limit(1);
-        if (invoice) {
-          await db.update(milestonesTable).set({ status: "paid", updatedAt: new Date() }).where(eq(milestonesTable.id, invoice.milestoneId || ""));
-        }
-      }
-    }
-
-    if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
-      const sub = event.data.object as any;
-      const customerId = sub.customer;
-      const plan = event.type === "customer.subscription.deleted" ? "starter" : "pro";
-      await db.update(creatorProfilesTable).set({ subscriptionPlan: plan, subscriptionStatus: sub.status, stripeSubscriptionId: sub.id }).where(eq(creatorProfilesTable.stripeCustomerId, customerId));
-    }
-
-    res.json({ received: true });
-  } catch (err) {
-    logger.error({ err }, "Stripe webhook error");
-    res.status(500).json({ error: "Webhook failed" });
   }
 });
 

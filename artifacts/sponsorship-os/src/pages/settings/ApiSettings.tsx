@@ -5,7 +5,7 @@ import { Loader2, CheckCircle2, XCircle, Info } from "lucide-react";
 
 const API_KEYS = [
   { key: "anthropic", label: "Anthropic Claude", description: "Powers AI contract extraction, sentiment analysis, and performance reports.", envVar: "ANTHROPIC_API_KEY", required: true },
-  { key: "stripe", label: "Stripe", description: "Handles invoice creation, payment tracking, and subscriptions.", envVar: "STRIPE_SECRET_KEY + STRIPE_PUBLISHABLE_KEY + STRIPE_WEBHOOK_SECRET", required: false },
+  { key: "paystack", label: "Paystack", description: "Handles invoice creation, payment tracking, and subscriptions.", envVar: "PAYSTACK_SECRET_KEY + NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY", required: false },
   { key: "resend", label: "Resend Email", description: "Sends deadline reminder emails to your inbox.", envVar: "RESEND_API_KEY + FROM_EMAIL", required: false },
   { key: "youtubeClient", label: "YouTube API", description: "Fetches your channel data and verifies content compliance.", envVar: "YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET", required: false },
   { key: "tiktokClient", label: "TikTok API", description: "TikTok content compliance verification.", envVar: "TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET", required: false },
@@ -83,7 +83,7 @@ export default function ApiSettings() {
               { label: "AI Contract Extraction", available: s.anthropic, dep: "Anthropic" },
               { label: "AI Sentiment Analysis", available: s.anthropic, dep: "Anthropic" },
               { label: "AI Performance Reports", available: s.anthropic, dep: "Anthropic" },
-              { label: "Stripe Invoicing", available: s.stripe, dep: "Stripe" },
+              { label: "Paystack Invoicing", available: s.paystack, dep: "Paystack" },
               { label: "Email Reminders", available: s.resend, dep: "Resend" },
               { label: "YouTube Compliance Check", available: s.youtubeClient, dep: "YouTube API" },
               { label: "Notion Export", available: s.notion, dep: "Notion" },

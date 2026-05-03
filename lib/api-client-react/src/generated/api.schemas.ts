@@ -375,8 +375,8 @@ export interface Invoice {
   userId: string;
   contractId?: string;
   milestoneId?: string;
-  stripeInvoiceId?: string;
-  stripeInvoiceUrl?: string;
+  paystackReference?: string;
+  paystackPaymentUrl?: string;
   status: InvoiceStatus;
   amount: string;
   currency: string;
@@ -567,13 +567,13 @@ export interface IntegrationsStatus {
   youtube: IntegrationStatus;
   tiktok: IntegrationStatus;
   notion: IntegrationStatus;
-  stripe: IntegrationStatus;
+  paystack: IntegrationStatus;
   resend: IntegrationStatus;
 }
 
 export interface ApiKeyStatus {
   anthropic: boolean;
-  stripe: boolean;
+  paystack: boolean;
   resend: boolean;
   youtubeClient: boolean;
   tiktokClient: boolean;

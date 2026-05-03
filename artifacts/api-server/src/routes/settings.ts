@@ -64,7 +64,7 @@ router.get("/settings/integrations", requireAuth, async (req, res) => {
     const hasYoutubeKeys = !!(process.env.YOUTUBE_CLIENT_ID && process.env.YOUTUBE_CLIENT_SECRET);
     const hasNotionKey = !!process.env.NOTION_API_KEY;
     const hasResend = !!process.env.RESEND_API_KEY;
-    const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+    const hasPaystack = !!process.env.PAYSTACK_SECRET_KEY;
 
     res.json({
       youtube: {
@@ -80,10 +80,10 @@ router.get("/settings/integrations", requireAuth, async (req, res) => {
         requiresApproval: !hasTiktokKeys,
         setupInstructions: !hasTiktokKeys ? "TikTok API access requires: 1. A TikTok developer account at developers.tiktok.com 2. An approved app with Login Kit and Video List scopes 3. Client Key and Client Secret from TikTok Developer Portal" : undefined,
       },
-      stripe: {
-        status: hasStripe ? "connected" : "requires_setup",
-        accountName: hasStripe ? "Stripe Connected" : undefined,
-        setupInstructions: !hasStripe ? "Add STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, and STRIPE_WEBHOOK_SECRET to enable Stripe invoicing." : undefined,
+      paystack: {
+        status: hasPaystack ? "connected" : "requires_setup",
+        accountName: hasPaystack ? "Paystack Connected" : undefined,
+        setupInstructions: !hasPaystack ? "Add PAYSTACK_SECRET_KEY and NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY to enable Paystack invoicing and payments." : undefined,
       },
       notion: {
         status: notionAccount?.status === "connected" ? "connected" : hasNotionKey ? "connected" : "requires_setup",
@@ -116,7 +116,7 @@ router.post("/settings/integrations/:provider/disconnect", requireAuth, async (r
 router.get("/settings/api-status", requireAuth, (_req, res) => {
   res.json({
     anthropic: !!process.env.ANTHROPIC_API_KEY,
-    stripe: !!process.env.STRIPE_SECRET_KEY,
+    paystack: !!process.env.PAYSTACK_SECRET_KEY,
     resend: !!process.env.RESEND_API_KEY,
     youtubeClient: !!process.env.YOUTUBE_CLIENT_ID,
     tiktokClient: !!process.env.TIKTOK_CLIENT_KEY,

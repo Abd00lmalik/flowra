@@ -23,8 +23,8 @@ const INTEGRATIONS = [
     icon: "🎵",
   },
   {
-    key: "stripe",
-    name: "Stripe",
+    key: "paystack",
+    name: "Paystack",
     description: "Automatically create and send professional invoices to brand partners. Payments tracked in real-time via webhooks.",
     authUrl: null,
     icon: "💳",
@@ -68,7 +68,7 @@ export default function IntegrationsSettings() {
 
   const handleDisconnect = (provider: string) => {
     disconnectMutation.mutate(
-      { provider: provider as "youtube" | "tiktok" | "notion" | "stripe" },
+      { provider: provider as "youtube" | "tiktok" | "notion" | "paystack" },
       {
         onSuccess: () => { toast({ title: `${provider} disconnected` }); refetch(); },
         onError: () => toast({ title: "Disconnect failed", variant: "destructive" }),

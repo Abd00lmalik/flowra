@@ -21,7 +21,7 @@ const PLANS = [
     price: "$29/mo",
     description: "For full-time creators",
     icon: Star,
-    features: ["Unlimited contracts", "Priority AI processing", "Stripe invoicing", "Performance reports", "Email reminders", "Notion exports", "Sentiment analysis"],
+    features: ["Unlimited contracts", "Priority AI processing", "Paystack invoicing", "Performance reports", "Email reminders", "Notion exports", "Sentiment analysis"],
     cta: "Upgrade to Pro",
     planKey: "pro",
     highlighted: true,
@@ -82,7 +82,6 @@ export default function BillingSettings() {
         <p className="text-muted-foreground mt-1">Manage your plan and payment method.</p>
       </div>
 
-      {/* Current plan status */}
       {currentPlan !== "starter" && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5 flex items-center justify-between">
@@ -101,7 +100,6 @@ export default function BillingSettings() {
         </Card>
       )}
 
-      {/* Plan cards */}
       <div className="grid md:grid-cols-3 gap-4">
         {PLANS.map(plan => {
           const isCurrentPlan = currentPlan === plan.planKey;
@@ -147,7 +145,7 @@ export default function BillingSettings() {
       </div>
 
       <p className="text-xs text-center text-muted-foreground">
-        All prices in USD. Cancel anytime. Powered by Stripe.
+        All prices in USD. Cancel anytime. Powered by Paystack.
       </p>
     </div>
   );

@@ -38,7 +38,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 All schema in `lib/db/src/schema/`. Tables: users, creator_profiles, contracts, contract_extractions, milestones, invoices, tax_reserves, communication_analyses, performance_reports, connected_accounts, notion_exports.
 
 ### API Routes (`artifacts/api-server/src/routes/`)
-All wired in `index.ts`. Routes: auth, dashboard, contracts (AI PDF extraction), milestones, invoices (Stripe), tax, performance (Claude), sentiment (Claude), youtube, tiktok, notion, settings, billing, cron.
+All wired in `index.ts`. Routes: auth, dashboard, contracts (AI PDF extraction), milestones, invoices (Paystack), tax, performance (Claude), sentiment (Claude), youtube, tiktok, notion, settings, billing, cron.
 
 ### Generated API Client (`lib/api-client-react/src/generated/api.ts`)
 **Source of truth for all hook names.** Query hooks: `useGetXxx()`, `useListXxx()`. Mutation hooks: `useCreateXxx()`, `useUpdateXxx()`, etc.
@@ -62,7 +62,7 @@ All wired in `index.ts`. Routes: auth, dashboard, contracts (AI PDF extraction),
 - `/app/invoices/new` — Create invoice
 - `/app/tax` — Tax reserve dashboard
 - `/app/settings/profile` — Creator profile
-- `/app/settings/integrations` — YouTube/TikTok/Stripe/Notion/Resend
+- `/app/settings/integrations` — YouTube/TikTok/Paystack/Notion/Resend
 - `/app/settings/billing` — Subscription plans
 - `/app/settings/api` — API key status
 - `/shared/report/:token` — Public performance report (no auth)
@@ -78,7 +78,7 @@ All wired in `index.ts`. Routes: auth, dashboard, contracts (AI PDF extraction),
 
 **Not yet configured (optional features):**
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — Google OAuth login
-- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — Invoicing
+- `PAYSTACK_SECRET_KEY`, `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` — Invoicing & payments
 - `RESEND_API_KEY`, `FROM_EMAIL` — Email reminders
 - `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` — YouTube compliance
 - `NOTION_API_KEY` — Notion exports
@@ -91,4 +91,4 @@ All wired in `index.ts`. Routes: auth, dashboard, contracts (AI PDF extraction),
 - `RegisterBody` requires `name` field; `OnboardingBody` requires `name` field
 - `useExportContractToNotion` takes `{ contractId, data }` not `{ id, data }`
 - `useGeneratePerformanceReport` takes `{ contractId }` not `{ id }`
-- `useDisconnectIntegration` provider type: `"youtube" | "tiktok" | "notion" | "stripe"`
+- `useDisconnectIntegration` provider type: `"youtube" | "tiktok" | "notion" | "paystack"`

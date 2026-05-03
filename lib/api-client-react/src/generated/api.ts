@@ -2235,7 +2235,7 @@ export function useListInvoices<
 }
 
 /**
- * @summary Create and send invoice via Stripe
+ * @summary Create and send invoice via Paystack
  */
 export const getCreateInvoiceUrl = () => {
   return `/api/invoices`;
@@ -2298,7 +2298,7 @@ export type CreateInvoiceMutationBody = BodyType<CreateInvoiceBody>;
 export type CreateInvoiceMutationError = ErrorType<unknown>;
 
 /**
- * @summary Create and send invoice via Stripe
+ * @summary Create and send invoice via Paystack
  */
 export const useCreateInvoice = <
   TError = ErrorType<unknown>,
@@ -4185,13 +4185,13 @@ export function useGetIntegrations<
  * @summary Disconnect an integration
  */
 export const getDisconnectIntegrationUrl = (
-  provider: "youtube" | "tiktok" | "notion" | "stripe",
+  provider: "youtube" | "tiktok" | "notion" | "paystack",
 ) => {
   return `/api/settings/integrations/${provider}/disconnect`;
 };
 
 export const disconnectIntegration = async (
-  provider: "youtube" | "tiktok" | "notion" | "stripe",
+  provider: "youtube" | "tiktok" | "notion" | "paystack",
   options?: RequestInit,
 ): Promise<void> => {
   return customFetch<void>(getDisconnectIntegrationUrl(provider), {
@@ -4207,14 +4207,14 @@ export const getDisconnectIntegrationMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof disconnectIntegration>>,
     TError,
-    { provider: "youtube" | "tiktok" | "notion" | "stripe" },
+    { provider: "youtube" | "tiktok" | "notion" | "paystack" },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof disconnectIntegration>>,
   TError,
-  { provider: "youtube" | "tiktok" | "notion" | "stripe" },
+  { provider: "youtube" | "tiktok" | "notion" | "paystack" },
   TContext
 > => {
   const mutationKey = ["disconnectIntegration"];
@@ -4228,7 +4228,7 @@ export const getDisconnectIntegrationMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof disconnectIntegration>>,
-    { provider: "youtube" | "tiktok" | "notion" | "stripe" }
+    { provider: "youtube" | "tiktok" | "notion" | "paystack" }
   > = (props) => {
     const { provider } = props ?? {};
 
@@ -4254,14 +4254,14 @@ export const useDisconnectIntegration = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof disconnectIntegration>>,
     TError,
-    { provider: "youtube" | "tiktok" | "notion" | "stripe" },
+    { provider: "youtube" | "tiktok" | "notion" | "paystack" },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
   Awaited<ReturnType<typeof disconnectIntegration>>,
   TError,
-  { provider: "youtube" | "tiktok" | "notion" | "stripe" },
+  { provider: "youtube" | "tiktok" | "notion" | "paystack" },
   TContext
 > => {
   return useMutation(getDisconnectIntegrationMutationOptions(options));
@@ -4343,7 +4343,7 @@ export function useGetApiStatus<
 }
 
 /**
- * @summary Create Stripe Checkout session for Pro plan
+ * @summary Create Paystack checkout session for Pro plan
  */
 export const getCreateCheckoutSessionUrl = () => {
   return `/api/billing/create-checkout`;
@@ -4401,7 +4401,7 @@ export type CreateCheckoutSessionMutationResult = NonNullable<
 export type CreateCheckoutSessionMutationError = ErrorType<unknown>;
 
 /**
- * @summary Create Stripe Checkout session for Pro plan
+ * @summary Create Paystack checkout session for Pro plan
  */
 export const useCreateCheckoutSession = <
   TError = ErrorType<unknown>,
@@ -4424,7 +4424,7 @@ export const useCreateCheckoutSession = <
 };
 
 /**
- * @summary Get Stripe customer portal URL
+ * @summary Get billing portal URL
  */
 export const getGetBillingPortalUrl = () => {
   return `/api/billing/portal`;
@@ -4475,7 +4475,7 @@ export type GetBillingPortalQueryResult = NonNullable<
 export type GetBillingPortalQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get Stripe customer portal URL
+ * @summary Get billing portal URL
  */
 
 export function useGetBillingPortal<
@@ -4499,37 +4499,37 @@ export function useGetBillingPortal<
 }
 
 /**
- * @summary Stripe webhook handler
+ * @summary Paystack webhook handler
  */
-export const getStripeWebhookUrl = () => {
-  return `/api/webhooks/stripe`;
+export const getPaystackWebhookUrl = () => {
+  return `/api/webhooks/paystack`;
 };
 
-export const stripeWebhook = async (options?: RequestInit): Promise<void> => {
-  return customFetch<void>(getStripeWebhookUrl(), {
+export const paystackWebhook = async (options?: RequestInit): Promise<void> => {
+  return customFetch<void>(getPaystackWebhookUrl(), {
     ...options,
     method: "POST",
   });
 };
 
-export const getStripeWebhookMutationOptions = <
+export const getPaystackWebhookMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof stripeWebhook>>,
+    Awaited<ReturnType<typeof paystackWebhook>>,
     TError,
     void,
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof stripeWebhook>>,
+  Awaited<ReturnType<typeof paystackWebhook>>,
   TError,
   void,
   TContext
 > => {
-  const mutationKey = ["stripeWebhook"];
+  const mutationKey = ["paystackWebhook"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -4539,42 +4539,42 @@ export const getStripeWebhookMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof stripeWebhook>>,
+    Awaited<ReturnType<typeof paystackWebhook>>,
     void
   > = () => {
-    return stripeWebhook(requestOptions);
+    return paystackWebhook(requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type StripeWebhookMutationResult = NonNullable<
-  Awaited<ReturnType<typeof stripeWebhook>>
+export type PaystackWebhookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof paystackWebhook>>
 >;
 
-export type StripeWebhookMutationError = ErrorType<unknown>;
+export type PaystackWebhookMutationError = ErrorType<unknown>;
 
 /**
- * @summary Stripe webhook handler
+ * @summary Paystack webhook handler
  */
-export const useStripeWebhook = <
+export const usePaystackWebhook = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof stripeWebhook>>,
+    Awaited<ReturnType<typeof paystackWebhook>>,
     TError,
     void,
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof stripeWebhook>>,
+  Awaited<ReturnType<typeof paystackWebhook>>,
   TError,
   void,
   TContext
 > => {
-  return useMutation(getStripeWebhookMutationOptions(options));
+  return useMutation(getPaystackWebhookMutationOptions(options));
 };
 
 /**

@@ -803,8 +803,8 @@ export const ListInvoicesResponseItem = zod.object({
   userId: zod.string(),
   contractId: zod.string().optional(),
   milestoneId: zod.string().optional(),
-  stripeInvoiceId: zod.string().optional(),
-  stripeInvoiceUrl: zod.string().optional(),
+  paystackReference: zod.string().optional(),
+  paystackPaymentUrl: zod.string().optional(),
   status: zod.enum(["draft", "sent", "paid", "failed", "cancelled"]),
   amount: zod.string(),
   currency: zod.string(),
@@ -822,7 +822,7 @@ export const ListInvoicesResponseItem = zod.object({
 export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem);
 
 /**
- * @summary Create and send invoice via Stripe
+ * @summary Create and send invoice via Paystack
  */
 export const CreateInvoiceBody = zod.object({
   contractId: zod.string(),
@@ -847,8 +847,8 @@ export const GetInvoiceResponse = zod.object({
   userId: zod.string(),
   contractId: zod.string().optional(),
   milestoneId: zod.string().optional(),
-  stripeInvoiceId: zod.string().optional(),
-  stripeInvoiceUrl: zod.string().optional(),
+  paystackReference: zod.string().optional(),
+  paystackPaymentUrl: zod.string().optional(),
   status: zod.enum(["draft", "sent", "paid", "failed", "cancelled"]),
   amount: zod.string(),
   currency: zod.string(),
@@ -881,8 +881,8 @@ export const UpdateInvoiceResponse = zod.object({
   userId: zod.string(),
   contractId: zod.string().optional(),
   milestoneId: zod.string().optional(),
-  stripeInvoiceId: zod.string().optional(),
-  stripeInvoiceUrl: zod.string().optional(),
+  paystackReference: zod.string().optional(),
+  paystackPaymentUrl: zod.string().optional(),
   status: zod.enum(["draft", "sent", "paid", "failed", "cancelled"]),
   amount: zod.string(),
   currency: zod.string(),
@@ -1208,7 +1208,7 @@ export const GetIntegrationsResponse = zod.object({
     requiresApproval: zod.boolean().optional(),
     setupInstructions: zod.string().optional(),
   }),
-  stripe: zod.object({
+  paystack: zod.object({
     status: zod.enum(["connected", "not_connected", "requires_setup", "error"]),
     accountName: zod.string().optional(),
     accountDetails: zod.string().optional(),
@@ -1230,7 +1230,7 @@ export const GetIntegrationsResponse = zod.object({
  * @summary Disconnect an integration
  */
 export const DisconnectIntegrationParams = zod.object({
-  provider: zod.enum(["youtube", "tiktok", "notion", "stripe"]),
+  provider: zod.enum(["youtube", "tiktok", "notion", "paystack"]),
 });
 
 /**
@@ -1238,7 +1238,7 @@ export const DisconnectIntegrationParams = zod.object({
  */
 export const GetApiStatusResponse = zod.object({
   anthropic: zod.boolean(),
-  stripe: zod.boolean(),
+  paystack: zod.boolean(),
   resend: zod.boolean(),
   youtubeClient: zod.boolean(),
   tiktokClient: zod.boolean(),
@@ -1246,14 +1246,14 @@ export const GetApiStatusResponse = zod.object({
 });
 
 /**
- * @summary Create Stripe Checkout session for Pro plan
+ * @summary Create Paystack checkout session for Pro plan
  */
 export const CreateCheckoutSessionResponse = zod.object({
   url: zod.string(),
 });
 
 /**
- * @summary Get Stripe customer portal URL
+ * @summary Get billing portal URL
  */
 export const GetBillingPortalResponse = zod.object({
   url: zod.string(),

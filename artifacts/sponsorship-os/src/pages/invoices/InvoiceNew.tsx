@@ -34,8 +34,6 @@ export default function InvoiceNew() {
     defaultValues: { contractId: "", brandName: "", brandEmail: "", amount: "", currency: "USD", dueDate: "", notes: "" },
   });
 
-  const watchAmount = form.watch("amount");
-  const platformFee = previewAmount * 0;
   const taxReserve = previewAmount * 0.30;
   const available = previewAmount - taxReserve;
 
@@ -50,8 +48,7 @@ export default function InvoiceNew() {
   };
 
   const handleAmountChange = (val: string) => {
-    const num = parseFloat(val) || 0;
-    setPreviewAmount(num);
+    setPreviewAmount(parseFloat(val) || 0);
   };
 
   const handleContractSelect = (contractId: string) => {
@@ -73,7 +70,7 @@ export default function InvoiceNew() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">New Invoice</h1>
-          <p className="text-sm text-muted-foreground">Send a Stripe-powered invoice to your brand partner.</p>
+          <p className="text-sm text-muted-foreground">Send a Paystack-powered invoice to your brand partner.</p>
         </div>
       </div>
 
@@ -148,7 +145,7 @@ export default function InvoiceNew() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {["USD", "EUR", "GBP", "CAD", "AUD"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        {["USD", "EUR", "GBP", "CAD", "AUD", "NGN", "GHS", "ZAR", "KES"].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <FormMessage />

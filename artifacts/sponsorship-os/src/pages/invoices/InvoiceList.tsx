@@ -46,7 +46,6 @@ export default function InvoiceList() {
         </Link>
       </div>
 
-      {/* Summary row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Paid", value: `$${totalPaid.toLocaleString()}`, icon: CheckCircle2, color: "text-green-400" },
@@ -66,7 +65,6 @@ export default function InvoiceList() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2">
         {["all", "draft", "sent", "paid", "failed", "cancelled"].map(s => (
           <Button key={s} variant={filter === s ? "default" : "outline"} size="sm" onClick={() => setFilter(s)}>
@@ -75,7 +73,6 @@ export default function InvoiceList() {
         ))}
       </div>
 
-      {/* Invoice list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-xl">
           <DollarSign className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -114,9 +111,9 @@ export default function InvoiceList() {
                     <p className="text-xs text-muted-foreground">{invoice.currency}</p>
                   </div>
                   <div className="flex flex-col gap-2 shrink-0">
-                    {invoice.stripeInvoiceUrl && (
+                    {invoice.paystackPaymentUrl && (
                       <Button variant="outline" size="sm" asChild>
-                        <a href={invoice.stripeInvoiceUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={invoice.paystackPaymentUrl} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-3 w-3 mr-1" />View
                         </a>
                       </Button>

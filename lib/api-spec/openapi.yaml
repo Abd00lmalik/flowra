@@ -509,7 +509,7 @@ paths:
     post:
       operationId: createInvoice
       tags: [invoices]
-      summary: Create and send invoice via Stripe
+      summary: Create and send invoice via Paystack
       requestBody:
         required: true
         content:
@@ -917,7 +917,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [youtube, tiktok, notion, stripe]
+            enum: [youtube, tiktok, notion, paystack]
       responses:
         "200":
           description: Disconnected
@@ -940,7 +940,7 @@ paths:
     post:
       operationId: createCheckoutSession
       tags: [billing]
-      summary: Create Stripe Checkout session for Pro plan
+      summary: Create Paystack checkout session for Pro plan
       responses:
         "200":
           description: Checkout session URL
@@ -957,7 +957,7 @@ paths:
     get:
       operationId: getBillingPortal
       tags: [billing]
-      summary: Get Stripe customer portal URL
+      summary: Get billing portal URL
       responses:
         "200":
           description: Portal URL
@@ -970,11 +970,11 @@ paths:
                     type: string
                 required: [url]
 
-  /webhooks/stripe:
+  /webhooks/paystack:
     post:
-      operationId: stripeWebhook
+      operationId: paystackWebhook
       tags: [billing]
-      summary: Stripe webhook handler
+      summary: Paystack webhook handler
       responses:
         "200":
           description: Webhook handled
@@ -1459,9 +1459,9 @@ components:
           type: string
         milestoneId:
           type: string
-        stripeInvoiceId:
+        paystackReference:
           type: string
-        stripeInvoiceUrl:
+        paystackPaymentUrl:
           type: string
         status:
           type: string
@@ -1687,11 +1687,11 @@ components:
           $ref: "#/components/schemas/IntegrationStatus"
         notion:
           $ref: "#/components/schemas/IntegrationStatus"
-        stripe:
+        paystack:
           $ref: "#/components/schemas/IntegrationStatus"
         resend:
           $ref: "#/components/schemas/IntegrationStatus"
-      required: [youtube, tiktok, notion, stripe, resend]
+      required: [youtube, tiktok, notion, paystack, resend]
 
     IntegrationStatus:
       type: object
@@ -1716,7 +1716,7 @@ components:
       properties:
         anthropic:
           type: boolean
-        stripe:
+        paystack:
           type: boolean
         resend:
           type: boolean
@@ -1726,7 +1726,7 @@ components:
           type: boolean
         notion:
           type: boolean
-      required: [anthropic, stripe, resend, youtubeClient, tiktokClient, notion]
+      required: [anthropic, paystack, resend, youtubeClient, tiktokClient, notion]
 
     UpdateProfileBody:
       type: object
