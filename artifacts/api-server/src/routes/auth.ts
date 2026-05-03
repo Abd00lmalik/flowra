@@ -98,7 +98,7 @@ router.post("/auth/onboarding", requireAuth, async (req, res) => {
 router.get("/auth/google", (_req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) { res.status(503).json({ error: "Google OAuth not configured" }); return; }
-  const domain = process.env.REPLIT_DEV_DOMAIN || "localhost";
+  const domain = process.env.APP_URL?.replace("https://", "") || process.env.NEXT_PUBLIC_APP_URL?.replace("https://", "") || process.env.REPLIT_DEV_DOMAIN || "localhost";
   const redirectUri = `https://${domain}/api/auth/google/callback`;
   const scope = encodeURIComponent("openid email profile");
   const state = Math.random().toString(36).slice(2);
@@ -111,7 +111,7 @@ router.get("/auth/google/callback", async (req, res) => {
     if (!code) { res.redirect("/?error=no_code"); return; }
     const clientId = process.env.GOOGLE_CLIENT_ID!;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET!;
-    const domain = process.env.REPLIT_DEV_DOMAIN || "localhost";
+    const domain = process.env.APP_URL?.replace("https://", "") || process.env.NEXT_PUBLIC_APP_URL?.replace("https://", "") || process.env.REPLIT_DEV_DOMAIN || "localhost";
     const redirectUri = `https://${domain}/api/auth/google/callback`;
 
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

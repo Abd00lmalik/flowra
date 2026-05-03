@@ -1,0 +1,10 @@
+feat: complete Flowra migration, Paystack integration, and cinematic UI overhaul
+
+* Fixed auth 404 issues and routing
+* Rebranded SponsorshipOS to Flowra across entire app
+* Replaced Stripe with full Paystack integration (payments, webhooks, invoices)
+* Migrated database schema to Paystack fields
+* Implemented Cinematic Tech Noir UI across all pages
+* Upgraded Kanban, contracts, performance, sentiment, and invoice flows
+* Updated cron jobs and email branding to Flowra
+* Ensured production readiness and deployment compatibility

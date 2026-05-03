@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { type Request, type Response, type NextFunction } from "express";
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || "dev-secret-change-me";
+const JWT_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || process.env.SESSION_SECRET || "dev-secret-change-me";
 
 export function signToken(userId: string): string {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "30d" });

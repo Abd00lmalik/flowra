@@ -1,0 +1,6 @@
+fix: resolve 405 Method Not Allowed on auth routes in production
+
+* Created pi/[...path].ts Serverless Function entrypoint to expose Express app
+* Updated Vercel configuration to ensure proper backend API routing
+* Updated Google OAuth redirect URIs to use APP_URL and NEXT_PUBLIC_APP_URL
+* Added AUTH_SECRET compatibility for token generation
