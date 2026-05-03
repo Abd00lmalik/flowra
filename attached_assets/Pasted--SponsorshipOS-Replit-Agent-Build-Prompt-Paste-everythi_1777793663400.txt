@@ -1,0 +1,1078 @@
+# SponsorshipOS — Replit Agent Build Prompt
+
+> Paste everything below this line into Replit Agent.
+
+---
+
+## CRITICAL INSTRUCTION — READ BEFORE STARTING
+
+You are building a **real, production-quality MVP** called **SponsorshipOS**. This is NOT a demo. This is NOT a mockup. Do NOT use placeholder data where real functionality is required. Do NOT stub out core features. Every feature listed below must be implemented with real code, real database persistence, and real API integrations.
+
+When you reach a step that requires an API key (OpenAI, Anthropic, Stripe, YouTube, TikTok, Resend, Notion, etc.), **stop and ask the user for the key before proceeding**. Do not hardcode fake keys. Do not skip the integration. If an external API has a known limitation (e.g., TikTok requires developer program approval), implement the full integration layer and surface the limitation clearly inside the app's Settings > Integrations page with setup instructions — do not fake success.
+
+---
+
+## PRODUCT OVERVIEW
+
+**SponsorshipOS** is an AI-powered back-office operating system for mid-tier creators and creator agencies.
+
+**Positioning:** "Stripe + Notion + AI contract ops for creators."
+
+**Problem:** Creators lose income because sponsorship contracts are scattered across PDFs, emails, DMs, invoices, and calendars. They miss deadlines, forget deliverables, under-invoice brands, fail to reserve tax money, and cannot prove performance to sponsors.
+
+**Solution:** SponsorshipOS turns a sponsorship agreement into an automated operational workflow — from contract upload through AI extraction, task generation, Kanban management, compliance verification, invoicing, and reporting.
+
+**Target users:** Mid-tier YouTube/TikTok/Instagram creators, micro-influencers, newsletter creators, creator managers, small creator agencies.
+
+---
+
+## TECH STACK
+
+- **Framework:** Next.js 14 (App Router, TypeScript)
+- **Styling:** Tailwind CSS + shadcn/ui components
+- **Database:** PostgreSQL via Neon or Supabase (user's choice — ask for DATABASE_URL)
+- **ORM:** Drizzle ORM with drizzle-kit for migrations
+- **Auth:** NextAuth.js v5 with credential + Google provider (ask for NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET)
+- **AI:** Anthropic Claude API (claude-sonnet-4-20250514) — ask for ANTHROPIC_API_KEY
+- **PDF Parsing:** pdf-parse npm package (server-side)
+- **File Storage:** Vercel Blob or Uploadthing — ask for storage credentials
+- **Payments:** Stripe — ask for STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY
+- **Email:** Resend — ask for RESEND_API_KEY and FROM_EMAIL
+- **YouTube:** Google OAuth + YouTube Data API v3 — ask for YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET
+- **TikTok:** TikTok OAuth v2 — ask for TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET
+- **Notion:** Notion API — ask for NOTION_API_KEY
+- **Job Queue:** pg-boss or BullMQ with Redis for reminder scheduling — ask for REDIS_URL if needed
+- **Charts:** Recharts
+- **Drag-and-drop Kanban:** @dnd-kit/core + @dnd-kit/sortable
+- **Forms:** react-hook-form + zod
+
+---
+
+## REQUIRED ENVIRONMENT VARIABLES
+
+Ask the user for these before attempting any integration that needs them:
+
+```
+DATABASE_URL=
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+ANTHROPIC_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+RESEND_API_KEY=
+FROM_EMAIL=
+YOUTUBE_CLIENT_ID=
+YOUTUBE_CLIENT_SECRET=
+TIKTOK_CLIENT_KEY=
+TIKTOK_CLIENT_SECRET=
+NOTION_API_KEY=
+BLOB_READ_WRITE_TOKEN=
+REDIS_URL=
+NEXT_PUBLIC_APP_URL=
+```
+
+---
+
+## DATABASE SCHEMA (Drizzle ORM)
+
+Create the following tables in `src/db/schema.ts`. Use `pgTable` from drizzle-orm/pg-core.
+
+### users
+```ts
+id: uuid, primaryKey, defaultRandom
+email: text, notNull, unique
+name: text
+image: text
+emailVerified: timestamp
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### creator_profiles
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id, notNull, unique
+businessName: text
+country: text
+defaultCurrency: text, default 'USD'
+taxReservePercent: integer, default 30
+paymentTermsDays: integer, default 30
+niche: text
+averageSponsorshipValue: numeric
+stripeCustomerId: text
+stripeConnectedAccountId: text
+subscriptionPlan: text, default 'starter' (starter | pro | agency)
+subscriptionStatus: text
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### connected_accounts
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+provider: text (youtube | tiktok | notion | stripe)
+providerAccountId: text
+accessToken: text
+refreshToken: text
+tokenExpiry: timestamp
+scope: text
+status: text (connected | pending | error | requires_approval)
+errorMessage: text
+metadata: jsonb
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### contracts
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+title: text, notNull
+status: text, default 'active' (active | completed | cancelled | paused)
+originalFilename: text
+fileUrl: text
+fileSize: integer
+rawExtractedText: text
+aiProcessingStatus: text, default 'pending' (pending | processing | complete | failed)
+aiError: text
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### contract_extractions
+```ts
+id: uuid, primaryKey
+contractId: uuid, references contracts.id, notNull
+brandName: text
+creatorName: text
+campaignName: text
+totalPayment: numeric
+currency: text, default 'USD'
+paymentSchedule: jsonb
+deliverables: jsonb
+deadlines: jsonb
+platforms: jsonb
+requiredHashtags: jsonb
+requiredMentions: jsonb
+requiredLinks: jsonb
+approvalRequirements: text
+revisionTerms: text
+usageRights: text
+exclusivityClauses: text
+latePaymentTerms: text
+cancellationTerms: text
+riskFlags: jsonb
+aiSummary: text
+rawJson: jsonb
+editedByUser: boolean, default false
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### milestones
+```ts
+id: uuid, primaryKey
+contractId: uuid, references contracts.id
+userId: uuid, references users.id
+title: text, notNull
+description: text
+platform: text
+dueDate: timestamp
+status: text, default 'contract_received'
+  (contract_received | planning | content_due | posted | awaiting_approval | invoice_ready | paid | overdue)
+requiredHashtags: jsonb
+requiredMentions: jsonb
+requiredLinks: jsonb
+paymentAmount: numeric
+requiresApproval: boolean, default false
+approvalStatus: text (pending | approved | rejected)
+contentUrl: text
+complianceStatus: text (unverified | verified | missing_hashtag | missing_mention | missing_link | late | needs_review)
+sortOrder: integer, default 0
+remindersSent: jsonb, default '[]'
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### invoices
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+contractId: uuid, references contracts.id
+milestoneId: uuid, references milestones.id
+stripeInvoiceId: text
+stripeInvoiceUrl: text
+status: text, default 'draft' (draft | sent | paid | failed | cancelled)
+amount: numeric, notNull
+currency: text, default 'USD'
+platformFee: numeric, default 0
+netAmount: numeric
+brandName: text
+brandEmail: text
+dueDate: timestamp
+paidAt: timestamp
+notes: text
+createdAt: timestamp, defaultNow
+updatedAt: timestamp, defaultNow
+```
+
+### tax_reserves
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+invoiceId: uuid, references invoices.id
+grossAmount: numeric
+platformFee: numeric
+netAmount: numeric
+reservePercent: integer
+reserveAmount: numeric
+availableBalance: numeric
+period: text
+createdAt: timestamp, defaultNow
+```
+
+### performance_reports
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+contractId: uuid, references contracts.id
+campaignName: text
+brandName: text
+reportData: jsonb
+complianceScore: integer
+generatedAt: timestamp, defaultNow
+sharedToken: text, unique
+```
+
+### communication_analyses
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+contractId: uuid, references contracts.id
+rawInput: text, notNull
+sentiment: text (positive | neutral | negative | mixed)
+urgencyLevel: text (low | medium | high | critical)
+paymentRisk: text (low | medium | high)
+scopeCreepRisk: text (low | medium | high)
+toneRecommendation: text
+suggestedReply: text
+fullAnalysis: jsonb
+createdAt: timestamp, defaultNow
+```
+
+### reminders
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+milestoneId: uuid, references milestones.id
+type: text (7day | 3day | 1day | overdue)
+sentAt: timestamp
+status: text (pending | sent | failed)
+```
+
+### notion_exports
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+contractId: uuid, references contracts.id
+notionPageId: text
+notionDatabaseId: text
+exportType: text (contract | milestones | calendar | report)
+status: text (success | failed)
+exportedAt: timestamp, defaultNow
+```
+
+### audit_logs
+```ts
+id: uuid, primaryKey
+userId: uuid, references users.id
+action: text, notNull
+entityType: text
+entityId: uuid
+metadata: jsonb
+createdAt: timestamp, defaultNow
+```
+
+Run `drizzle-kit generate` and `drizzle-kit migrate` after defining schema.
+
+---
+
+## APP PAGES AND ROUTES
+
+### Public
+- `/` — Marketing landing page with pricing tiers
+- `/login` — Sign in page
+- `/signup` — Sign up page
+- `/shared/report/[token]` — Public sponsor-facing performance report
+
+### Authenticated (inside `/app` layout with sidebar)
+- `/app/dashboard` — Main dashboard
+- `/app/contracts` — All contracts list
+- `/app/contracts/new` — Upload and process new contract
+- `/app/contracts/[id]` — Contract detail view
+- `/app/contracts/[id]/milestones` — Milestones Kanban board
+- `/app/contracts/[id]/performance` — Performance report builder
+- `/app/contracts/[id]/sentiment` — Brand communication analysis
+- `/app/invoices` — Invoice management
+- `/app/invoices/new` — Create invoice
+- `/app/tax` — Tax reserve dashboard
+- `/app/settings` — Settings hub
+- `/app/settings/profile` — Creator profile
+- `/app/settings/integrations` — API connections (YouTube, TikTok, Notion, Stripe)
+- `/app/settings/billing` — Subscription management
+- `/app/settings/api` — API key status panel
+
+---
+
+## FEATURE IMPLEMENTATION INSTRUCTIONS
+
+---
+
+### 1. AUTHENTICATION
+
+Use NextAuth.js v5.
+
+Providers: Google OAuth + Email/Password credentials.
+
+On first sign-in, trigger onboarding flow if `creator_profiles` row does not exist for the user.
+
+Onboarding wizard (multi-step form, 4 steps):
+- Step 1: Creator name, business name, country
+- Step 2: Default currency, payment terms (net 15/30/60), niche
+- Step 3: Tax reserve percentage (default 30%), average sponsorship value
+- Step 4: Connect YouTube (optional), connect Stripe (optional)
+
+After onboarding, redirect to `/app/dashboard`.
+
+---
+
+### 2. DASHBOARD
+
+Fetch and display these summary cards:
+
+- **Total Contract Value** — sum of all `totalPayment` from `contract_extractions`
+- **Paid Revenue** — sum of `invoices` where status = 'paid'
+- **Pending Invoices** — count and total of invoices where status = 'sent'
+- **Tax Reserve** — sum of `taxReserves.reserveAmount` for current user
+- **Active Contracts** — count of contracts where status = 'active'
+- **Overdue Milestones** — count of milestones where status = 'overdue'
+
+Display a section: **Upcoming Obligations** — milestones due within 14 days, sorted by dueDate.
+
+Display: **Contract Risk Alerts** — milestones overdue + contracts with unresolved risk flags.
+
+Display: **Brand Sentiment Snapshot** — last 5 communication analyses with sentiment badge.
+
+Use Recharts for a line chart showing monthly income trend from paid invoices.
+
+---
+
+### 3. CONTRACT UPLOAD AND AI EXTRACTION
+
+**UI:** `/app/contracts/new`
+
+- File upload input (PDF only, max 20MB)
+- Upload via multipart form to `/api/contracts/upload`
+
+**API Route: POST `/api/contracts/upload`**
+
+1. Validate file type and size.
+2. Upload file to Blob storage. Save `fileUrl`.
+3. Create `contracts` row with status `aiProcessingStatus: 'pending'`.
+4. Return contract ID to frontend immediately.
+5. Trigger background processing (use a server action or API route that runs async):
+
+**Background extraction process:**
+
+```
+a. Parse PDF text using pdf-parse.
+b. Chunk text if longer than 12,000 tokens.
+c. Send to Anthropic claude-sonnet-4-20250514 with the following system prompt:
+```
+
+**Contract Extraction System Prompt (send verbatim):**
+
+```
+You are a legal and commercial contract analyst specializing in influencer and creator sponsorship agreements. 
+
+You will receive raw text extracted from a sponsorship contract PDF. Your task is to extract all structured information and return ONLY a valid JSON object. Do not include any explanation, markdown fences, or commentary — only the raw JSON.
+
+Extract the following fields. If a field is not present in the contract, return null for that field or an empty array for array fields.
+
+Return this exact JSON structure:
+{
+  "contract_title": string,
+  "brand_name": string,
+  "creator_name": string,
+  "campaign_name": string,
+  "total_payment": number,
+  "currency": string,
+  "payment_schedule": [
+    { "milestone": string, "amount": number, "due_trigger": string }
+  ],
+  "deliverables": [
+    {
+      "title": string,
+      "type": string,
+      "platform": string,
+      "quantity": number,
+      "due_date": string,
+      "format_requirements": string,
+      "payment_amount": number,
+      "requires_approval": boolean
+    }
+  ],
+  "deadlines": [{ "event": string, "date": string }],
+  "platforms": [string],
+  "required_hashtags": [string],
+  "required_mentions": [string],
+  "required_links": [{ "label": string, "url": string }],
+  "approval_requirements": string,
+  "revision_terms": string,
+  "usage_rights": string,
+  "exclusivity_clauses": string,
+  "late_payment_terms": string,
+  "cancellation_terms": string,
+  "risk_flags": [
+    { "flag": string, "severity": "low"|"medium"|"high", "clause": string }
+  ],
+  "summary": string
+}
+
+Be precise. Extract exact dollar amounts, dates, hashtags, and platform names as written in the contract. For dates, use ISO 8601 format (YYYY-MM-DD). For payment amounts, extract the numeric value only.
+```
+
+```
+d. Parse the returned JSON.
+e. Save to contract_extractions table.
+f. For each deliverable in the extraction, auto-generate a milestone row.
+g. Set contracts.aiProcessingStatus = 'complete'.
+h. Log to audit_logs.
+```
+
+**Frontend contract detail page (`/app/contracts/[id]`):**
+
+- Show extraction status (polling until complete if still processing)
+- Display AI summary in a highlighted summary card
+- Display risk flags with severity badges (red/orange/yellow)
+- Display all extracted fields in editable form (user can correct AI errors)
+- Show "Regenerate Extraction" button
+- Link to Kanban board for this contract
+
+---
+
+### 4. KANBAN BOARD — MILESTONE MANAGEMENT
+
+**UI:** `/app/contracts/[id]/milestones`
+
+Use `@dnd-kit/core` and `@dnd-kit/sortable` for drag-and-drop.
+
+Columns (in order):
+1. Contract Received
+2. Planning
+3. Content Due
+4. Posted
+5. Awaiting Brand Approval
+6. Invoice Ready
+7. Paid
+8. Overdue
+
+Each milestone card displays:
+- Title
+- Platform badge
+- Due date (color-coded: red if overdue, orange if <3 days, yellow if <7 days)
+- Payment amount
+- Compliance status badge (if available)
+- Approval status (if required)
+
+Dragging a card between columns updates `milestones.status` via PATCH `/api/milestones/[id]`.
+
+Add Milestone button opens a modal form.
+
+Clicking a card opens a side drawer with full milestone details and:
+- Edit form
+- Content URL input (for linking posted content)
+- "Run Compliance Check" button (triggers YouTube verification if connected)
+- "Generate Invoice" button (creates invoice draft for this milestone)
+
+**API Routes:**
+
+- `GET /api/contracts/[id]/milestones` — return all milestones for a contract
+- `POST /api/contracts/[id]/milestones` — create milestone
+- `PATCH /api/milestones/[id]` — update milestone (status, sortOrder, contentUrl, etc.)
+- `DELETE /api/milestones/[id]` — delete milestone
+
+---
+
+### 5. MILESTONE REMINDERS
+
+Build a scheduled job (use BullMQ + Redis or pg-boss with the provided REDIS_URL).
+
+Run every hour. For each user with active milestones:
+
+1. Find milestones where `dueDate` is within 7 days AND reminder type '7day' not yet sent.
+2. Find milestones where `dueDate` is within 3 days AND reminder type '3day' not yet sent.
+3. Find milestones where `dueDate` is tomorrow AND reminder type '1day' not yet sent.
+4. Find milestones where `dueDate` is past AND status not in ('paid', 'cancelled') AND reminder type 'overdue' not sent.
+
+For each, send email via Resend.
+
+**Email content for reminders:**
+
+Subject: `⚠️ [Milestone title] is due [in X days / TODAY / OVERDUE] — SponsorshipOS`
+
+Body: HTML email showing:
+- Milestone title
+- Contract/brand name
+- Due date
+- Required hashtags and mentions
+- Link to the milestone in SponsorshipOS
+- If overdue: include invoice generation prompt
+
+Mark reminder as sent in `reminders` table.
+
+Also persist unread reminder count to user's dashboard.
+
+**API Route:** `POST /api/cron/reminders` — protected by a cron secret header, triggered by Vercel Cron or external scheduler.
+
+---
+
+### 6. YOUTUBE ACCOUNT CONNECTION
+
+**Settings > Integrations > YouTube**
+
+Implement full Google OAuth 2.0 flow for YouTube Data API v3.
+
+Required scopes:
+- `https://www.googleapis.com/auth/youtube.readonly`
+- `https://www.googleapis.com/auth/youtube.force-ssl`
+
+OAuth flow:
+1. User clicks "Connect YouTube" — redirects to `/api/auth/youtube`
+2. Google redirects to `/api/auth/youtube/callback`
+3. Exchange code for access + refresh tokens
+4. Save to `connected_accounts` table (provider: 'youtube')
+5. Show connected channel name, subscriber count, and avatar on settings page
+
+**API Route: `GET /api/youtube/channels`**
+- Fetch connected user's channel using YouTube Data API v3 `channels.list` with `part=snippet,statistics`
+
+**API Route: `GET /api/youtube/videos`**
+- Fetch recent videos using `search.list` or `playlistItems.list` from uploads playlist
+- Return title, description, publishedAt, videoId, url, tags, thumbnailUrl
+
+Ask user for YOUTUBE_CLIENT_ID and YOUTUBE_CLIENT_SECRET before implementing.
+
+---
+
+### 7. TIKTOK ACCOUNT CONNECTION
+
+**Settings > Integrations > TikTok**
+
+Implement TikTok OAuth v2 (Login Kit).
+
+Required scopes: `user.info.basic`, `video.list`
+
+OAuth flow:
+1. `/api/auth/tiktok` — redirect to TikTok auth URL
+2. `/api/auth/tiktok/callback` — exchange code for tokens, save to connected_accounts
+
+If TIKTOK_CLIENT_KEY or TIKTOK_CLIENT_SECRET are not set, show a status card:
+
+```
+TikTok Integration Status: Requires Setup
+TikTok API access requires:
+1. A TikTok developer account at developers.tiktok.com
+2. An approved app with Login Kit and Video List scopes
+3. Client Key and Client Secret from TikTok Developer Portal
+
+Once approved, provide TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET to activate.
+```
+
+Do NOT fake a successful connection. Show this message clearly.
+
+---
+
+### 8. PROOF-OF-PERFORMANCE ENGINE
+
+**UI:** `/app/contracts/[id]/performance`
+
+**YouTube Verification (API Route: `POST /api/performance/verify/[milestoneId]`):**
+
+1. Fetch connected YouTube channel's recent videos (last 90 days) from YouTube API.
+2. For the given milestone, get required hashtags, mentions, and links from `contract_extractions`.
+3. For each video, check:
+   - Title contains brand mention?
+   - Description contains required hashtags? (case-insensitive match)
+   - Description contains required @mentions?
+   - Description contains required links?
+   - Published at date vs. milestone dueDate
+4. Score each video and find best match.
+5. Set `milestones.complianceStatus` to one of: `verified | missing_hashtag | missing_mention | missing_link | late | needs_review`
+6. Save matched content URL to `milestones.contentUrl`
+
+**Performance Report Generation (API Route: `POST /api/performance/report/[contractId]`):**
+
+Send milestone compliance results + extraction data to Claude with this prompt:
+
+```
+You are a performance reporting assistant for influencer marketing campaigns.
+
+Given the following campaign data and compliance results, generate a professional, sponsor-ready performance report in JSON format.
+
+Return ONLY valid JSON with this structure:
+{
+  "executive_summary": string,
+  "campaign_overview": {
+    "campaign_name": string,
+    "brand_name": string,
+    "creator_name": string,
+    "campaign_period": string,
+    "total_deliverables": number,
+    "completed_deliverables": number,
+    "compliance_score": number
+  },
+  "deliverable_results": [
+    {
+      "title": string,
+      "platform": string,
+      "content_url": string,
+      "published_date": string,
+      "required_hashtags": [string],
+      "hashtags_found": [string],
+      "hashtags_missing": [string],
+      "required_mentions": [string],
+      "mentions_found": [string],
+      "required_links": [string],
+      "links_found": [string],
+      "status": string,
+      "notes": string
+    }
+  ],
+  "overall_compliance_score": number,
+  "recommendations": string,
+  "next_steps": string
+}
+```
+
+Save report to `performance_reports` table.
+
+Generate a unique `sharedToken` (nanoid).
+
+Public-facing report at `/shared/report/[token]` — no auth required — renders a clean, branded report page.
+
+**"Copy Report Link" button** copies the public URL to clipboard.
+
+---
+
+### 9. INVOICING
+
+**UI:** `/app/invoices` and `/app/invoices/new`
+
+**Stripe Integration:**
+
+Before implementing, ask user for:
+- STRIPE_SECRET_KEY
+- STRIPE_PUBLISHABLE_KEY
+- STRIPE_WEBHOOK_SECRET
+
+**Invoice Creation Flow:**
+
+1. User clicks "Generate Invoice" on a milestone in Invoice Ready status.
+2. Pre-fill invoice form with:
+   - Brand name from contract extraction
+   - Amount from milestone payment amount
+   - Due date based on user's payment terms preference
+3. User reviews and clicks "Create & Send Invoice"
+4. API Route `POST /api/invoices`:
+   - Create or retrieve Stripe customer for brand (using brand email + name)
+   - Create Stripe Invoice with line item
+   - For Agency plan users, add a 1% platform fee as a separate Stripe line item
+   - Set auto_advance: false initially (draft)
+   - Finalize and send invoice via Stripe
+   - Save invoice to `invoices` table
+   - Calculate tax reserve entry, save to `tax_reserves`
+5. Return Stripe invoice URL to user
+
+**Invoice statuses sync via Stripe webhooks:**
+
+`POST /api/webhooks/stripe`:
+- Verify webhook signature using STRIPE_WEBHOOK_SECRET
+- Handle:
+  - `invoice.paid` → update invoices.status = 'paid', invoices.paidAt = timestamp
+  - `invoice.payment_failed` → update status = 'failed'
+  - `invoice.voided` → update status = 'cancelled'
+  - `invoice.sent` → update status = 'sent'
+- After status update, recalculate tax reserve
+
+**Invoice List Page:**
+
+Table showing all invoices with: Brand, Contract, Amount, Status, Due Date, Action buttons.
+
+Filter by status. Sort by date.
+
+---
+
+### 10. TAX RESERVE CALCULATOR
+
+**UI:** `/app/tax`
+
+Every time an invoice is created or marked paid, calculate and save to `tax_reserves`:
+
+```
+grossAmount = invoice.amount
+platformFee = (subscriptionPlan === 'agency') ? grossAmount * 0.01 : 0
+netAmount = grossAmount - platformFee
+reserveAmount = netAmount * (userProfile.taxReservePercent / 100)
+availableBalance = netAmount - reserveAmount
+```
+
+**Tax Dashboard shows:**
+- Total gross income (all time)
+- Total platform fees paid
+- Total net income
+- Total in tax reserve
+- Total available balance
+- Monthly breakdown table
+- "Export to CSV" button
+
+**Settings:** Let user change tax reserve percentage (10–50%). Update all future calculations.
+
+---
+
+### 11. BRAND COMMUNICATION SENTIMENT ANALYSIS
+
+**UI:** `/app/contracts/[id]/sentiment`
+
+Form with:
+- Textarea: "Paste brand email or message here"
+- Or: file upload for .txt or .eml files
+
+On submit, `POST /api/sentiment/analyze`:
+
+Send pasted text to Claude with this prompt:
+
+```
+You are a business communication analyst specializing in brand-creator relationships.
+
+Analyze the following communication from a brand to a creator. Return ONLY valid JSON with this structure:
+
+{
+  "sentiment": "positive" | "neutral" | "negative" | "mixed",
+  "urgency_level": "low" | "medium" | "high" | "critical",
+  "payment_risk": "low" | "medium" | "high",
+  "scope_creep_risk": "low" | "medium" | "high",
+  "key_concerns": [string],
+  "positive_signals": [string],
+  "warning_signals": [string],
+  "tone_assessment": string,
+  "tone_recommendation": string,
+  "suggested_reply": string,
+  "action_items": [string],
+  "summary": string
+}
+
+Be specific and practical. The creator needs actionable intelligence, not generic advice.
+```
+
+Display results in a structured card layout:
+- Sentiment badge (color-coded)
+- Urgency badge
+- Risk meters (payment risk, scope creep risk) — visual bars
+- Key concerns list
+- Warning signals list
+- Tone recommendation
+- Suggested reply (copy-to-clipboard button)
+- Action items
+
+Save to `communication_analyses` table.
+
+Show history of all past analyses for this contract, sorted by date.
+
+---
+
+### 12. NOTION INTEGRATION
+
+**Settings > Integrations > Notion**
+
+If NOTION_API_KEY is not set, show setup instructions.
+
+Notion OAuth or API key input — save to connected_accounts.
+
+**Export Types (API Routes):**
+
+`POST /api/notion/export/contract/[contractId]`:
+- Create a Notion page in the user's specified database
+- Title: Campaign name + brand name
+- Include: AI summary, risk flags, deliverables, payment schedule
+- Return Notion page URL
+
+`POST /api/notion/export/milestones/[contractId]`:
+- Create a Notion database table of milestones
+- Columns: Title, Platform, Due Date, Status, Payment, Compliance
+
+`POST /api/notion/export/report/[contractId]`:
+- Export performance report as a Notion page with formatted sections
+
+Ask user for: NOTION_API_KEY and their Notion database ID.
+
+Show export history in `notion_exports` table on the contract detail page.
+
+---
+
+### 13. SETTINGS / ADMIN PAGE
+
+**`/app/settings/integrations`**
+
+Show a card for each integration with:
+- Provider icon
+- Status (Connected / Not Connected / Requires Setup / Error)
+- Connected account name/email if applicable
+- Connect / Disconnect button
+- Error message if status is Error
+
+Integrations to show:
+- YouTube (with channel name and subscriber count if connected)
+- TikTok (with status message if requires approval)
+- Stripe (show connected account status, last 4 of bank if applicable)
+- Notion (show workspace name if connected)
+- Email / Resend (show from email if configured)
+
+**`/app/settings/api`**
+
+Show status for each configured environment variable:
+- ANTHROPIC_API_KEY: Set / Missing
+- STRIPE_SECRET_KEY: Set / Missing
+- RESEND_API_KEY: Set / Missing
+- YOUTUBE_CLIENT_ID: Set / Missing
+- TIKTOK_CLIENT_KEY: Set / Missing
+- NOTION_API_KEY: Set / Missing
+
+Do NOT expose actual key values. Show only: Set ✓ or Missing ✗.
+
+**`/app/settings/billing`**
+
+Show current subscription plan: Starter / Pro / Agency.
+
+Show plan features comparison table.
+
+"Upgrade to Pro" button — implement Stripe Checkout session (monthly subscription, $29/month).
+
+Stripe subscription product IDs — ask user or create them via API.
+
+---
+
+### 14. SUBSCRIPTION PLAN ENFORCEMENT
+
+Create a middleware or server-side check for plan limits:
+
+- **Starter:** Max 2 active contracts. Manual invoicing only. No performance reports. No sentiment analysis.
+- **Pro:** Unlimited contracts. Automated Stripe invoicing. Performance reports. Sentiment analysis.
+- **Agency:** Everything in Pro + 1% platform commission on automated invoices. Multi-creator dashboard (if agency flag is set on account).
+
+When a Starter user tries to add a 3rd contract, show an upgrade prompt modal.
+
+When a Starter user clicks "Generate Invoice via Stripe", show upgrade prompt.
+
+Store plan in `creator_profiles.subscriptionPlan`. Update via Stripe webhook on subscription events.
+
+---
+
+## UI / DESIGN DIRECTION
+
+The design must be **premium, serious, and modern**. Think Stripe Dashboard meets Linear meets Notion.
+
+**Color system:**
+- Primary background: `#0A0A0F` (near-black with slight blue tint)
+- Surface: `#111118`
+- Border: `#1E1E2E`
+- Text primary: `#F0F0F5`
+- Text secondary: `#8888AA`
+- Accent: `#5B5EFF` (electric indigo)
+- Success: `#22D3A0`
+- Warning: `#F59E0B`
+- Danger: `#EF4444`
+
+**Typography:**
+- Headings: `DM Sans` (700, 600)
+- Body: `Inter` (400, 500)
+- Monospace: `JetBrains Mono` (for contract text, JSON display)
+
+**Component patterns:**
+- Stat cards with subtle gradient borders
+- Tables with sticky headers and hover highlights
+- Modal overlays with backdrop blur
+- Sidebar with icon + label navigation (collapsible)
+- Status badges with dot indicator
+- Progress bars for compliance scores
+- Risk flags with red/orange/yellow left border accent
+
+**Layout:**
+- Fixed left sidebar (240px), main content area
+- Top bar showing current page, user avatar, notifications bell
+- Mobile responsive — sidebar collapses to bottom nav on mobile
+
+**Kanban board:** Dark column backgrounds, card drag shadow, smooth animation.
+
+Do NOT use purple-on-white gradients, generic SaaS templates, or placeholder hero images.
+
+---
+
+## BACKEND API ROUTES SUMMARY
+
+```
+POST   /api/auth/[...nextauth]       — NextAuth
+GET    /api/auth/youtube             — YouTube OAuth initiation
+GET    /api/auth/youtube/callback    — YouTube OAuth callback
+GET    /api/auth/tiktok              — TikTok OAuth initiation
+GET    /api/auth/tiktok/callback     — TikTok OAuth callback
+
+POST   /api/contracts/upload         — Upload and begin AI extraction
+GET    /api/contracts                — List all contracts for user
+GET    /api/contracts/[id]           — Get contract with extraction
+PATCH  /api/contracts/[id]           — Update contract
+DELETE /api/contracts/[id]           — Delete contract
+POST   /api/contracts/[id]/reprocess — Re-trigger AI extraction
+
+GET    /api/contracts/[id]/milestones — List milestones
+POST   /api/contracts/[id]/milestones — Create milestone
+PATCH  /api/milestones/[id]           — Update milestone
+DELETE /api/milestones/[id]           — Delete milestone
+
+POST   /api/performance/verify/[milestoneId] — Run YouTube compliance check
+POST   /api/performance/report/[contractId]  — Generate performance report
+GET    /api/performance/report/[contractId]  — Get saved report
+GET    /api/shared/report/[token]            — Public report (no auth)
+
+POST   /api/invoices                 — Create invoice (Stripe)
+GET    /api/invoices                 — List invoices
+GET    /api/invoices/[id]           — Get invoice
+PATCH  /api/invoices/[id]           — Update invoice (cancel, etc.)
+
+POST   /api/webhooks/stripe          — Stripe webhook handler
+
+GET    /api/tax                      — Tax reserve summary
+GET    /api/tax/history              — Monthly breakdown
+
+POST   /api/sentiment/analyze        — Brand communication analysis
+GET    /api/sentiment/[contractId]   — Get analysis history
+
+POST   /api/notion/export/contract/[contractId]  — Export contract to Notion
+POST   /api/notion/export/milestones/[contractId] — Export milestones
+POST   /api/notion/export/report/[contractId]    — Export report
+
+GET    /api/youtube/channels         — Fetch connected channel info
+GET    /api/youtube/videos           — Fetch recent videos
+
+POST   /api/cron/reminders           — Scheduled reminder job (protected)
+
+GET    /api/dashboard/summary        — Dashboard stat cards data
+```
+
+---
+
+## LANDING PAGE
+
+The `/` page should be a real marketing landing page with:
+
+- Hero: "The Operating System for Creator Sponsorships"
+- Sub-headline: "Turn your brand deal PDFs into automated workflows. Invoicing. Compliance. Tax reserves. Performance reports."
+- CTA: "Start Free — No credit card required"
+- Feature section with 6 key features (icons + description)
+- Pricing section: Starter (Free) / Pro ($29/mo) / Agency (1% commission)
+- Social proof placeholder: "Join X creators managing $X in brand deals"
+- FAQ section
+- Footer
+
+---
+
+## STRIPE CHECKOUT — SUBSCRIPTION
+
+`POST /api/billing/create-checkout`:
+- Create Stripe Checkout Session for Pro plan ($29/month)
+- Set success_url and cancel_url
+- Pass user ID in metadata
+- Return session URL
+
+`GET /api/billing/portal`:
+- Create Stripe Customer Portal session
+- Return portal URL
+
+Handle subscription events in webhook:
+- `customer.subscription.created` → update subscriptionPlan = 'pro'
+- `customer.subscription.deleted` → update subscriptionPlan = 'starter'
+- `customer.subscription.updated` → sync plan status
+
+---
+
+## TESTING CHECKLIST
+
+Before considering the MVP complete, verify:
+
+- [ ] User can sign up and complete onboarding
+- [ ] Dashboard loads with correct stats
+- [ ] Contract PDF uploads and AI extraction completes
+- [ ] Risk flags appear correctly
+- [ ] Milestones auto-generate from contract extraction
+- [ ] Kanban board drag-and-drop updates status in DB
+- [ ] Reminder emails send via Resend (test with real email)
+- [ ] YouTube OAuth connects and channel info displays
+- [ ] YouTube video fetch works (test with real connected account)
+- [ ] Compliance check runs and updates milestone status
+- [ ] Performance report generates and is viewable at public URL
+- [ ] Stripe invoice creates and appears in Stripe dashboard
+- [ ] Stripe webhook updates invoice status when paid
+- [ ] Tax reserve calculates correctly on invoice creation
+- [ ] Brand communication sentiment analysis returns structured result
+- [ ] Notion export creates page in user's workspace
+- [ ] Settings integrations page shows real status for all providers
+- [ ] Starter plan blocks 3rd contract creation
+- [ ] Pro plan upgrade via Stripe Checkout works
+- [ ] Mobile layout is functional and not broken
+- [ ] All database tables have correct foreign key constraints
+- [ ] Audit log records key actions
+- [ ] No API keys are exposed in frontend JavaScript bundles
+
+---
+
+## DEPLOYMENT INSTRUCTIONS
+
+This app is designed for Vercel deployment.
+
+1. Set all environment variables in Vercel dashboard.
+2. Connect PostgreSQL via Neon or Supabase (ask user for DATABASE_URL).
+3. Run `drizzle-kit migrate` against production DB before first deploy.
+4. Set up Vercel Cron Job:
+   - Path: `/api/cron/reminders`
+   - Schedule: `0 * * * *` (every hour)
+   - Pass `CRON_SECRET` header for security
+5. Configure Stripe webhook endpoint to `https://yourdomain.com/api/webhooks/stripe`.
+6. Add production domain to Google OAuth, TikTok OAuth, and Stripe webhook allowed origins.
+7. Set NEXT_PUBLIC_APP_URL to production domain.
+
+---
+
+## IMPORTANT FINAL INSTRUCTION
+
+When you (Replit Agent) begin building:
+
+1. Start by asking for all required API keys and environment variables before writing integration code.
+2. Set up the database schema first and run migrations.
+3. Build auth + onboarding.
+4. Build dashboard with real data fetching (no mock data).
+5. Build contract upload and AI extraction.
+6. Build Kanban board.
+7. Build invoicing.
+8. Build compliance + performance reporting.
+9. Build sentiment analysis.
+10. Build Notion + reminder integrations.
+11. Build settings and billing.
+12. Build landing page last.
+
+At every step where you need credentials or an API key you do not have, stop and ask the user explicitly. Name the variable. Explain what it is used for. Do not proceed with a stub.
+
+**This is a real MVP. Build it like a real engineer shipping to production.**
