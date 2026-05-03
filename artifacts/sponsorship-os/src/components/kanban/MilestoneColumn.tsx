@@ -1,7 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MilestoneCard } from "./MilestoneCard";
 
 interface Milestone {
@@ -22,39 +20,44 @@ interface MilestoneColumnProps {
   color?: string;
 }
 
-const STATUS_COLORS: Record<string, { bg: string; badge: string; icon: string }> = {
-  planning: { bg: "bg-blue-500/10", badge: "border-blue-500/30", icon: "📋" },
-  content_due: { bg: "bg-yellow-500/10", badge: "border-yellow-500/30", icon: "⏰" },
-  posted: { bg: "bg-purple-500/10", badge: "border-purple-500/30", icon: "📱" },
-  paid: { bg: "bg-green-500/10", badge: "border-green-500/30", icon: "✅" },
+const STATUS_COLORS: Record<string, { bg: string; dot: string; icon: string }> = {
+  planning: { bg: "bg-white/[0.02]", dot: "bg-muted-foreground", icon: "📋" },
+  content_due: { bg: "bg-primary/5", dot: "bg-primary", icon: "⏰" },
+  posted: { bg: "bg-white/[0.02]", dot: "bg-accent", icon: "📱" },
+  paid: { bg: "bg-white/[0.02]", dot: "bg-green-400", icon: "✅" },
 };
 
 export function MilestoneColumn({ status, label, milestones, color }: MilestoneColumnProps) {
   const { setNodeRef } = useDroppable({ id: status });
-  const config = STATUS_COLORS[status] || { bg: "bg-muted/30", badge: "border-border", icon: "•" };
+  const config = STATUS_COLORS[status] || { bg: "bg-white/[0.02]", dot: "bg-muted-foreground", icon: "•" };
 
   return (
     <div
       ref={setNodeRef}
-      className="flex-shrink-0 w-96 max-w-full"
+      className="flex-shrink-0 w-80 max-w-full flex flex-col h-full"
     >
-      <Card className={`h-full ${config.bg} border ${config.badge}`}>
-        <CardHeader className="pb-3 border-b">
+      <div className={`glass-card flex-1 flex flex-col border-t-2 ${
+        status === 'content_due' ? 'border-t-primary' : 
+        status === 'posted' ? 'border-t-accent' : 
+        status === 'paid' ? 'border-t-green-400' : 'border-t-white/[0.1]'
+      } overflow-hidden`}>
+        <div className={`p-4 border-b border-white/[0.04] ${config.bg}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{config.icon}</span>
-              <CardTitle className="text-sm font-semibold">{label}</CardTitle>
+              <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+              <h3 className="text-sm font-semibold tracking-wide uppercase">{label}</h3>
             </div>
-            <Badge variant="secondary" className="text-xs">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/[0.05] text-muted-foreground">
               {milestones.length}
-            </Badge>
+            </span>
           </div>
-        </CardHeader>
-        <CardContent className="p-4 space-y-3 max-h-[calc(100vh-280px)] overflow-y-auto">
+        </div>
+        
+        <div className="p-3 flex-1 overflow-y-auto space-y-3 min-h-[150px] bg-black/20">
           {milestones.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-              <p className="text-sm">No milestones</p>
-              <p className="text-xs text-muted-foreground/60">Drag cards here to get started</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center opacity-40">
+              <div className="text-2xl mb-2 grayscale">{config.icon}</div>
+              <p className="text-xs font-mono text-muted-foreground">NO MILESTONES</p>
             </div>
           ) : (
             <SortableContext items={milestones.map(m => m.id)} strategy={verticalListSortingStrategy}>
@@ -72,8 +75,8 @@ export function MilestoneColumn({ status, label, milestones, color }: MilestoneC
               ))}
             </SortableContext>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

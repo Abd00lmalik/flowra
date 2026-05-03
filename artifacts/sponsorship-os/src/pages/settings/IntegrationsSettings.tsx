@@ -1,11 +1,10 @@
 import { useGetIntegrations, useDisconnectIntegration } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, XCircle, AlertCircle, ExternalLink, Unplug } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { FlowraLogo } from "@/components/FlowraLogo";
 
 const INTEGRATIONS = [
   {
@@ -77,19 +76,25 @@ export default function IntegrationsSettings() {
   };
 
   if (isLoading) {
-    return <div className="flex h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-4">
+        <FlowraLogo className="w-10 h-10 animate-float" />
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const data = (integrations as any) || {};
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
-        <p className="text-muted-foreground mt-1">Connect your platforms to unlock the full power of Flowra.</p>
+        <p className="text-label mb-2">PLATFORM CONNECTIONS</p>
+        <h1 className="font-editorial text-4xl font-light">Integrations</h1>
+        <p className="text-sm text-muted-foreground mt-2">Connect your platforms to unlock the full power of Flowra.</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {INTEGRATIONS.map(integration => {
           const info = data[integration.key] || {};
           const status: string = info.status || "requires_setup";
@@ -98,74 +103,75 @@ export default function IntegrationsSettings() {
           const notConnected = status === "not_connected";
 
           return (
-            <Card key={integration.key} className={isConnected ? "border-green-500/30" : ""}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl mt-0.5">{integration.icon}</span>
-                    <div>
-                      <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-                        {integration.name}
-                        {isConnected && (
-                          <Badge variant="outline" className="text-xs text-green-400 border-green-500/30">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />Connected
-                          </Badge>
-                        )}
-                        {notConnected && (
-                          <Badge variant="outline" className="text-xs text-muted-foreground">Not connected</Badge>
-                        )}
-                        {needsSetup && (
-                          <Badge variant="outline" className="text-xs text-yellow-400 border-yellow-500/30">
-                            <AlertCircle className="h-3 w-3 mr-1" />Setup required
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      {info.accountName && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {info.accountName}{info.accountDetails && ` · ${info.accountDetails}`}
-                        </p>
+            <div
+              key={integration.key}
+              className={`glass-card p-5 transition-all duration-500 ${
+                isConnected ? "border-accent/20" : ""
+              }`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <span className="text-2xl mt-0.5">{integration.icon}</span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h3 className="font-semibold text-sm">{integration.name}</h3>
+                      {isConnected && (
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">
+                          CONNECTED
+                        </span>
+                      )}
+                      {notConnected && (
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-white/[0.04] text-muted-foreground border border-white/[0.06]">
+                          NOT CONNECTED
+                        </span>
+                      )}
+                      {needsSetup && (
+                        <span className="text-xs font-mono px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                          SETUP REQUIRED
+                        </span>
                       )}
                     </div>
-                  </div>
-
-                  <div className="flex gap-2 shrink-0">
-                    {isConnected && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDisconnect(integration.key)}
-                        disabled={disconnectMutation.isPending}
-                      >
-                        <Unplug className="h-4 w-4 mr-1" />Disconnect
-                      </Button>
+                    {info.accountName && (
+                      <p className="text-xs text-muted-foreground font-mono mb-1">
+                        {info.accountName}{info.accountDetails && ` · ${info.accountDetails}`}
+                      </p>
                     )}
-                    {notConnected && integration.authUrl && (
-                      <Button size="sm" asChild>
-                        <a href={integration.authUrl}>
-                          <ExternalLink className="h-4 w-4 mr-1" />Connect
-                        </a>
-                      </Button>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{integration.description}</p>
+                    {info.setupInstructions && (
+                      <div className="mt-3 bg-white/[0.02] rounded-lg p-3 text-xs text-muted-foreground font-mono whitespace-pre-line border border-white/[0.04]">
+                        {info.setupInstructions}
+                      </div>
+                    )}
+                    {info.errorMessage && (
+                      <div className="mt-3 bg-destructive/10 text-destructive rounded-lg p-3 text-xs flex items-start gap-2 border border-destructive/20">
+                        <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        {info.errorMessage}
+                      </div>
                     )}
                   </div>
                 </div>
-              </CardHeader>
 
-              <CardContent className="pt-0 space-y-2">
-                <CardDescription>{integration.description}</CardDescription>
-                {info.setupInstructions && (
-                  <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground whitespace-pre-line border border-border/50">
-                    {info.setupInstructions}
-                  </div>
-                )}
-                {info.errorMessage && (
-                  <div className="bg-red-500/10 text-red-400 rounded-lg p-3 text-xs flex items-start gap-2">
-                    <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                    {info.errorMessage}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <div className="flex gap-2 shrink-0">
+                  {isConnected && (
+                    <button
+                      className="text-xs font-mono text-muted-foreground hover:text-destructive transition-colors duration-500"
+                      onClick={() => handleDisconnect(integration.key)}
+                      disabled={disconnectMutation.isPending}
+                    >
+                      DISCONNECT
+                    </button>
+                  )}
+                  {notConnected && integration.authUrl && (
+                    <a
+                      href={integration.authUrl}
+                      className="text-xs font-mono bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors duration-500 font-semibold"
+                    >
+                      CONNECT
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>

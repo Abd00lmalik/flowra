@@ -1,32 +1,30 @@
-export function FlowraLogo({ className = "w-8 h-8", darkMode = false }: { className?: string; darkMode?: boolean }) {
+export function FlowraLogo({ className = "w-8 h-8" }: { className?: string }) {
   return (
     <svg viewBox="0 0 120 120" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Abstract flowing waves representing workflow and momentum */}
       <defs>
         <linearGradient id="flowra-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366f1" />
-          <stop offset="100%" stopColor="#3b82f6" />
+          <stop offset="0%" stopColor="#FFB800" />
+          <stop offset="100%" stopColor="#D4FF00" />
         </linearGradient>
       </defs>
-      
-      {/* Main flowing mark */}
+      {/* Flowing wave marks — workflow + momentum */}
       <path
-        d="M 20 60 Q 40 40, 60 50 Q 80 60, 100 40"
+        d="M 20 55 Q 40 35, 60 48 Q 80 61, 100 38"
         stroke="url(#flowra-gradient)"
-        strokeWidth="8"
+        strokeWidth="7"
         strokeLinecap="round"
         fill="none"
       />
       <path
-        d="M 20 80 Q 40 100, 60 90 Q 80 80, 100 100"
+        d="M 20 78 Q 40 98, 60 85 Q 80 72, 100 95"
         stroke="url(#flowra-gradient)"
-        strokeWidth="8"
+        strokeWidth="7"
         strokeLinecap="round"
         fill="none"
+        opacity="0.6"
       />
-      
       {/* Center accent dot */}
-      <circle cx="60" cy="70" r="5" fill="url(#flowra-gradient)" />
+      <circle cx="60" cy="67" r="4" fill="#FFB800" />
     </svg>
   );
 }
@@ -38,8 +36,10 @@ export function FlowraWordmark({ className = "text-lg font-bold" }: { className?
 export function FlowraFull({ className = "flex items-center gap-2" }: { className?: string }) {
   return (
     <div className={className}>
-      <FlowraLogo className="w-6 h-6" />
-      <FlowraWordmark className="text-lg font-semibold tracking-tight" />
+      <FlowraLogo className="w-7 h-7" />
+      <span className="text-lg font-semibold tracking-tight text-foreground">
+        Flow<span className="text-primary">ra</span>
+      </span>
     </div>
   );
 }

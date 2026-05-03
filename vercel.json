@@ -1,4 +1,8 @@
 {
   "buildCommand": "pnpm run build",
-  "outputDirectory": "artifacts/sponsorship-os/dist/public"
+  "outputDirectory": "artifacts/sponsorship-os/dist/public",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

@@ -1,7 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { GripVertical } from "lucide-react";
 
 interface MilestoneCardProps {
@@ -20,7 +18,7 @@ export function MilestoneCard({ id, title, contractTitle, dueDate, paymentAmount
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
   const daysUntilDue = dueDate
@@ -32,45 +30,53 @@ export function MilestoneCard({ id, title, contractTitle, dueDate, paymentAmount
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`cursor-grab active:cursor-grabbing transition-all ${isDragging ? "shadow-lg ring-2 ring-primary" : ""} ${isOverdue ? "border-red-500/30" : ""}`}>
-        <CardContent className="p-4 space-y-3">
-          <div className="flex gap-2">
-            <button
-              {...attributes}
-              {...listeners}
-              className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
-            >
-              <GripVertical className="w-4 h-4" />
-            </button>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm truncate">{title}</h4>
-              {contractTitle && <p className="text-xs text-muted-foreground truncate">{contractTitle}</p>}
+      <div
+        className={`glass-card p-4 transition-all duration-300 ${
+          isDragging ? "ring-1 ring-primary/50 shadow-[0_0_20px_-5px_rgba(255,184,0,0.3)] bg-white/[0.04]" : "hover:bg-white/[0.03]"
+        } ${isOverdue ? "border-destructive/30" : ""}`}
+      >
+        <div className="flex gap-3">
+          <button
+            {...attributes}
+            {...listeners}
+            className="text-muted-foreground hover:text-primary transition-colors duration-300 shrink-0 mt-0.5 cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="w-4 h-4 opacity-50" />
+          </button>
+          <div className="flex-1 min-w-0 space-y-3">
+            <div>
+              <h4 className="font-semibold text-sm truncate leading-tight">{title}</h4>
+              {contractTitle && <p className="text-xs text-muted-foreground truncate font-mono mt-1">{contractTitle}</p>}
             </div>
-          </div>
 
-          {description && <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>}
+            {description && <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{description}</p>}
 
-          <div className="space-y-2">
-            {paymentAmount && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Payout</span>
-                <span className="text-sm font-semibold text-primary">${Number(paymentAmount).toLocaleString()}</span>
-              </div>
+            <div className="space-y-1.5 pt-2 border-t border-white/[0.04]">
+              {paymentAmount && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono text-muted-foreground">PAYOUT</span>
+                  <span className="text-sm font-mono font-semibold text-primary">${Number(paymentAmount).toLocaleString()}</span>
+                </div>
+              )}
+
+              {dueDate && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-mono text-muted-foreground">DUE</span>
+                  <span className={`text-xs font-mono font-medium ${isOverdue ? "text-destructive" : isUrgent ? "text-accent" : "text-muted-foreground"}`}>
+                    {daysUntilDue !== null ? `${Math.abs(daysUntilDue)}D ${isOverdue ? "AGO" : "LEFT"}` : new Date(dueDate).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {isOverdue && (
+              <span className="block w-full text-center text-xs font-mono py-1 rounded bg-destructive/10 text-destructive border border-destructive/20 mt-2">
+                OVERDUE
+              </span>
             )}
-
-            {dueDate && (
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Due</span>
-                <span className={`text-xs font-medium ${isOverdue ? "text-red-400" : isUrgent ? "text-yellow-400" : "text-muted-foreground"}`}>
-                  {daysUntilDue !== null ? `${Math.abs(daysUntilDue)}d ${isOverdue ? "ago" : "left"}` : new Date(dueDate).toLocaleDateString()}
-                </span>
-              </div>
-            )}
           </div>
-
-          {isOverdue && <Badge variant="outline" className="w-full text-center text-xs text-red-400 border-red-500/30">Overdue</Badge>}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

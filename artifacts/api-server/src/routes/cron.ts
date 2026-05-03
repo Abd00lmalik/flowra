@@ -55,19 +55,19 @@ router.post("/cron/reminders", async (req, res) => {
             const domain = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost";
 
             await resend.emails.send({
-              from: process.env.FROM_EMAIL || "noreply@sponsorshipos.com",
+              from: process.env.FROM_EMAIL || "noreply@flowra.app",
               to: user.email,
-              subject: `${milestone.title} is due ${label} — SponsorshipOS`,
+              subject: `${milestone.title} is due ${label} — Flowra`,
               html: `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h2 style="color: #5B5EFF;">SponsorshipOS Reminder</h2>
+                  <h2 style="color: #FFB800;">Flowra Reminder</h2>
                   <p>Your milestone <strong>${milestone.title}</strong> from <strong>${contractTitle}</strong> is due <strong>${label}</strong>.</p>
                   <p><strong>Due Date:</strong> ${dueDate.toLocaleDateString()}</p>
                   ${milestone.paymentAmount ? `<p><strong>Payment:</strong> $${milestone.paymentAmount}</p>` : ""}
                   ${Array.isArray(milestone.requiredHashtags) && milestone.requiredHashtags.length > 0 ? `<p><strong>Required Hashtags:</strong> ${(milestone.requiredHashtags as string[]).join(", ")}</p>` : ""}
                   ${Array.isArray(milestone.requiredMentions) && milestone.requiredMentions.length > 0 ? `<p><strong>Required Mentions:</strong> ${(milestone.requiredMentions as string[]).join(", ")}</p>` : ""}
                   ${key === "overdue" ? "<p style='color: red;'><strong>This milestone is overdue. Please generate an invoice or update its status.</strong></p>" : ""}
-                  <a href="${domain}/app/contracts/${milestone.contractId}/milestones" style="display: inline-block; background: #5B5EFF; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 16px;">View Milestone</a>
+                  <a href="${domain}/app/contracts/${milestone.contractId}/milestones" style="display: inline-block; background: #FFB800; color: #000; padding: 10px 20px; border-radius: 6px; text-decoration: none; margin-top: 16px; font-weight: 600;">View Milestone</a>
                 </div>
               `,
             });

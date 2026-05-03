@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { DndContext, DragEndEvent, closestCorners } from "@dnd-kit/core";
 import { MilestoneColumn } from "./MilestoneColumn";
-import { Card, CardContent } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 interface Milestone {
@@ -70,8 +69,9 @@ export function MilestoneKanban({ milestones = [], isLoading = false, onStatusCh
 
   if (isLoading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-4">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <p className="text-sm font-mono text-muted-foreground animate-pulse">LOADING MILESTONES...</p>
       </div>
     );
   }
@@ -85,49 +85,63 @@ export function MilestoneKanban({ milestones = [], isLoading = false, onStatusCh
   const completedMilestones = groupedMilestones.paid.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in flex flex-col h-[calc(100vh-120px)]">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Milestones</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage your contract milestones across the workflow.
-          {totalMilestones > 0 && ` ${completedMilestones}/${totalMilestones} completed.`}
-        </p>
+        <p className="text-label mb-1">WORKFLOW</p>
+        <div className="flex items-end justify-between">
+          <div>
+            <h1 className="font-editorial text-4xl font-light">Milestones</h1>
+            <p className="text-sm text-muted-foreground mt-2">
+              Manage your contract milestones across the workflow.
+            </p>
+          </div>
+          {totalMilestones > 0 && (
+            <div className="text-right">
+              <p className="text-xs font-mono text-muted-foreground mb-1">COMPLETION</p>
+              <p className="font-mono text-xl text-accent">
+                {completedMilestones}<span className="text-muted-foreground">/{totalMilestones}</span>
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Empty state */}
       {totalMilestones === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="py-16 flex flex-col items-center justify-center gap-4 text-center">
-            <div className="text-4xl">📋</div>
-            <div>
-              <h3 className="font-semibold text-lg">No milestones yet</h3>
-              <p className="text-sm text-muted-foreground mt-1">Upload a contract to automatically create milestones, or add them manually.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="glass-card flex-1 flex flex-col items-center justify-center gap-4 text-center p-8">
+          <div className="w-16 h-16 rounded-full bg-white/[0.03] border border-white/[0.05] flex items-center justify-center mb-2">
+            <span className="text-2xl grayscale opacity-50">📋</span>
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">No milestones yet</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-md">Upload a contract to automatically extract deliverables into milestones, or add them manually.</p>
+          </div>
+        </div>
       )}
 
       {/* Kanban board */}
       {totalMilestones > 0 && (
-        <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
-          <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6">
-            {COLUMNS.map(col => (
-              <MilestoneColumn
-                key={col.status}
-                status={col.status}
-                label={col.label}
-                milestones={groupedMilestones[col.status]}
-              />
-            ))}
-          </div>
-        </DndContext>
+        <div className="flex-1 overflow-hidden flex">
+          <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCorners}>
+            <div className="flex gap-6 overflow-x-auto pb-4 h-full flex-1">
+              {COLUMNS.map(col => (
+                <MilestoneColumn
+                  key={col.status}
+                  status={col.status}
+                  label={col.label}
+                  milestones={groupedMilestones[col.status]}
+                />
+              ))}
+            </div>
+          </DndContext>
+        </div>
       )}
 
       {isUpdating && (
-        <div className="fixed bottom-6 left-6 bg-primary text-primary-foreground px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Updating...</span>
+        <div className="fixed bottom-6 right-6 glass-card bg-black/80 px-4 py-3 rounded-lg flex items-center gap-3 border-primary/30 z-50 animate-fade-in-up">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span className="text-xs font-mono text-primary">UPDATING STATUS...</span>
         </div>
       )}
     </div>
