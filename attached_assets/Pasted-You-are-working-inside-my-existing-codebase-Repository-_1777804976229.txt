@@ -1,0 +1,298 @@
+You are working inside my existing codebase.
+
+Repository:
+https://github.com/Abd00lmalik/flowra
+
+Task:
+Upgrade the app branding and Milestones page.
+
+Main goals:
+1. Rename the product/app branding to Flowra everywhere visible in the UI.
+2. Add a clean professional Flowra logo.
+3. Add a full drag-and-drop Kanban board to the Milestones page using dnd-kit.
+4. Improve the overall UI/UX so the app feels polished, modern, and production-ready.
+5. Make sure the app can deploy safely on Vercel without build errors.
+6. List every required environment variable at the end.
+
+Important:
+Do not break existing features.
+Do not remove working functionality.
+Do not hardcode fake backend success.
+Do not expose secrets.
+Do not redesign the entire app from scratch.
+Improve only what is necessary to make the product feel top-tier and deploy-ready.
+
+PHASE 1: Inspect the codebase first
+
+Before changing code:
+- Find the framework, package manager, styling system, routing structure, and deployment setup.
+- Find where the current app name appears.
+- Find the current Milestones page.
+- Identify the existing milestone data model, status values, components, routes, and storage/API patterns.
+- Identify all current environment variables used by the app.
+- Identify anything that may break Vercel deployment.
+
+PHASE 2: Rename app branding to Flowra
+
+Change all visible product branding to:
+
+Flowra
+
+This includes:
+- Navigation
+- Sidebar
+- Header
+- Footer
+- Landing page copy
+- Auth pages
+- Dashboard pages
+- Metadata/title
+- Empty states
+- Loading states
+- Toast messages where relevant
+
+Do not rename internal files, package names, database tables, or API fields unless necessary. The main goal is visible product branding.
+
+PHASE 3: Add a professional Flowra logo
+
+Create a simple, original logo for Flowra.
+
+Logo direction:
+- Modern SaaS identity
+- Clean, premium, creator-focused
+- Should feel like workflow, growth, deals, and momentum
+- Avoid childish icons
+- Avoid overused generic AI/globe icons
+- Prefer a simple abstract mark plus wordmark
+
+Implementation:
+- Add a reusable Logo component.
+- Use it in the main navigation/sidebar/header and relevant auth/landing pages.
+- The logo should work in light and dark backgrounds if the app supports both.
+- Use SVG or clean CSS, not an external image dependency.
+- Do not use copyrighted logos or copied brand marks.
+
+PHASE 4: Improve fonts and visual system
+
+Make the UI feel top-tier and polished.
+
+Use stylized but readable fonts.
+
+Preferred font direction:
+- Headings: modern premium display font, for example Space Grotesk, Sora, Plus Jakarta Sans, or Manrope.
+- Body: clean readable font, for example Inter, Geist, Plus Jakarta Sans, or Manrope.
+
+If the app already has a font system, improve it without breaking layout.
+
+UI/UX improvement direction:
+- Cleaner spacing
+- Better hierarchy
+- More refined cards
+- Better dashboard layout
+- Better empty states
+- Better buttons
+- Better form states
+- Better badges
+- Better shadows/borders
+- Better mobile responsiveness
+- Consistent colors and typography
+- Professional SaaS feel
+
+Avoid:
+- Overusing gradients
+- Neon overload
+- Random colors
+- Heavy animations that hurt usability
+- Large rewrites unrelated to the task
+
+PHASE 5: Add dnd-kit Kanban board to Milestones page
+
+Install and use dnd-kit if missing:
+
+- @dnd-kit/core
+- @dnd-kit/sortable
+- @dnd-kit/utilities
+
+Create a full drag-and-drop Kanban board on the Milestones page.
+
+Creators should be able to visually manage milestones by dragging cards across workflow columns.
+
+Use existing milestone status values if they already exist.
+
+If no clear statuses exist, use:
+
+- Draft
+- Pending
+- In Progress
+- Submitted
+- Approved
+- Paid
+- Revision Needed
+
+Kanban behavior:
+- Drag milestone cards between columns.
+- Reorder milestone cards inside the same column.
+- Moving a card to another column updates the milestone status.
+- UI should update immediately after drop.
+- Persist the status update using the existing backend/API/database method if available.
+- If no backend persistence exists yet, create a clean placeholder function with a clear TODO comment instead of faking persistence.
+
+Suggested components:
+- MilestoneKanbanBoard
+- MilestoneColumn
+- MilestoneCard
+
+Milestone cards should show available fields such as:
+- Milestone title
+- Creator or project name
+- Due date
+- Amount or payout value
+- Current status badge
+- Short description
+- Last updated date if available
+
+Milestones page should include:
+- Page title
+- Short workflow description
+- Status columns with milestone counts
+- Empty state for columns with no milestones
+- Loading state
+- Error state
+- Responsive desktop and mobile layout
+
+Desktop:
+- Columns should display horizontally.
+- Use horizontal scrolling if needed.
+
+Mobile:
+- Board must remain usable.
+- Use horizontal scrolling or a clean stacked layout.
+
+Accessibility:
+- Add basic keyboard-friendly drag behavior where possible through dnd-kit.
+- Use clear card labels.
+- Add focus states.
+- Keep contrast strong.
+
+PHASE 6: Make Vercel deployment safe
+
+Before finalizing, audit the project for common Vercel deployment problems.
+
+Fix issues such as:
+- Missing imports
+- TypeScript errors
+- ESLint/build errors
+- Node-only code running on the client
+- Browser-only code running during SSR
+- Unchecked environment variables crashing build
+- Hardcoded localhost URLs in production paths
+- Direct access to undefined env variables at build time
+- API routes that fail because secrets are missing during build
+- Invalid Next.js/Vite config
+- Incorrect package scripts
+- Missing dependencies
+- Incorrect dynamic route usage
+- Hydration issues from browser-only APIs like window/localStorage
+
+Environment variable handling:
+- The app should not crash during Vercel build just because production env variables are not set yet.
+- Server-only secrets must never be exposed to the browser.
+- Only public client variables should use NEXT_PUBLIC_ or VITE_ depending on the framework.
+- Add safe validation where needed.
+- Show clear runtime errors if required env variables are missing during actual feature use.
+- Do not log secret values.
+
+If the app uses Next.js:
+- Make sure `next build` succeeds.
+- Avoid calling secret-dependent logic during static build unless guarded.
+- Use dynamic rendering only where needed.
+- Keep API secrets server-side only.
+
+If the app uses Vite:
+- Make sure `npm run build` succeeds.
+- Use `import.meta.env` correctly.
+- Only expose variables prefixed with `VITE_`.
+
+PHASE 7: List required environment variables
+
+At the end of the work, output a complete list of environment variables required by the app.
+
+Group them like this:
+
+Required for core app:
+- VARIABLE_NAME=description
+
+Authentication:
+- VARIABLE_NAME=description
+
+Payments:
+- VARIABLE_NAME=description
+
+Email:
+- VARIABLE_NAME=description
+
+AI:
+- VARIABLE_NAME=description
+
+Integrations:
+- VARIABLE_NAME=description
+
+Cron/jobs:
+- VARIABLE_NAME=description
+
+For each variable, state:
+- Whether it is required or optional
+- Whether it is server-only or public/client-side
+- Where to get it
+- Whether it is needed for local development, Vercel production, or both
+
+Important payment instruction:
+I am not using Stripe. If Stripe exists in the current codebase, remove it or make sure it does not block deployment. Prefer Paystack or Flutterwave for African payments.
+
+Use these possible payment env variables only if the app actually implements them:
+
+Paystack:
+PAYSTACK_SECRET_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+
+Flutterwave:
+FLUTTERWAVE_SECRET_KEY=
+NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY=
+FLUTTERWAVE_ENCRYPTION_KEY=
+FLUTTERWAVE_WEBHOOK_SECRET=
+
+Do not require Stripe variables unless Stripe is still actively used.
+
+PHASE 8: Validation
+
+Run the correct checks based on the project:
+
+- Install dependencies if needed.
+- Run lint if available.
+- Run typecheck if available.
+- Run build.
+- Fix all errors caused by your changes.
+- Verify the Milestones page renders.
+- Verify dragging between columns works.
+- Verify reordering inside a column works.
+- Verify the app name is Flowra across visible UI.
+- Verify the logo appears correctly.
+- Verify the project is safe for Vercel deployment.
+
+PHASE 9: Commit and push
+
+After completing and validating everything:
+
+Commit message:
+Upgrade Flowra branding and milestones Kanban board
+
+Push to:
+https://github.com/Abd00lmalik/flowra
+
+Final response should include:
+1. Summary of changes made.
+2. Files changed.
+3. Build/lint/typecheck results.
+4. Complete environment variable list.
+5. Any remaining TODOs or assumptions.
+6. Confirmation that changes were committed and pushed.
