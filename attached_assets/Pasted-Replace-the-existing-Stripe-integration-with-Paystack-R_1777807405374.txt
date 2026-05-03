@@ -1,0 +1,93 @@
+Replace the existing Stripe integration with Paystack.
+
+Repository:
+https://github.com/Abd00lmalik/flowra
+
+Important:
+I am not using Stripe. Remove Stripe completely and use Paystack instead.
+
+Tasks:
+
+1. Inspect the current payment implementation
+- Find all Stripe-related files, imports, API routes, components, checkout logic, webhook handlers, and environment variables.
+- Identify how payments/subscriptions are currently handled.
+- Do not rewrite unrelated parts of the app.
+
+2. Remove Stripe
+Remove or replace all references to:
+
+STRIPE_SECRET_KEY
+STRIPE_PUBLISHABLE_KEY
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+STRIPE_WEBHOOK_SECRET
+
+Also remove:
+- Stripe SDK imports
+- Stripe checkout session logic
+- Stripe webhook routes
+- Stripe payment verification logic
+- Stripe env validation
+- Stripe package dependency if it is no longer used
+
+3. Add Paystack integration
+
+Use these env variables:
+
+PAYSTACK_SECRET_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+
+Frontend:
+- Use `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` only on the client.
+- Add Paystack checkout where the existing Stripe checkout was used.
+- Keep the existing pricing/plans/subscription UI if it already exists.
+- Replace Stripe button/action with Paystack payment initialization.
+
+Backend:
+- Use `PAYSTACK_SECRET_KEY` only on the server.
+- Add a server route to initialize or verify Paystack transactions based on the existing architecture.
+- Verify successful transactions using Paystack’s transaction verification endpoint.
+- If webhooks are used, verify Paystack webhooks with the `x-paystack-signature` header using HMAC SHA512 and `PAYSTACK_SECRET_KEY`.
+- Do not require a separate `PAYSTACK_WEBHOOK_SECRET`.
+
+4. Environment safety
+- Do not commit real secrets.
+- Make sure `.env.local` is in `.gitignore`.
+- Create or update `.env.example`.
+- Add only placeholder variable names:
+
+PAYSTACK_SECRET_KEY=
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=
+
+- Remove Stripe variables from `.env.example`.
+
+5. Vercel deployment safety
+- The app must build safely on Vercel.
+- Do not crash the build if Paystack env variables are missing.
+- Only check required env variables at runtime when payment features are used.
+- Show clear errors if Paystack keys are missing.
+- Do not expose `PAYSTACK_SECRET_KEY` to frontend code.
+
+6. Validation
+Run:
+- install if needed
+- lint if available
+- typecheck if available
+- build
+
+Fix all errors caused by the migration.
+
+7. Git
+Commit and push the final changes to:
+
+https://github.com/Abd00lmalik/flowra
+
+Commit message:
+
+Replace Stripe with Paystack
+
+Final response should include:
+- Summary of Stripe files removed/replaced
+- Paystack files/routes/components added or changed
+- Environment variables needed
+- Build/lint/typecheck results
+- Confirmation that changes were committed and pushed
