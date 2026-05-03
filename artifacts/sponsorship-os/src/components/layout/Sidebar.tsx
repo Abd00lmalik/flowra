@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useLogout } from "@workspace/api-client-react";
 import { removeToken } from "@/lib/auth";
+import { FlowraFull } from "@/components/FlowraLogo";
 
 const navItems = [
   { href: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,8 +36,8 @@ export function Sidebar() {
   return (
     <div className="flex flex-col w-64 border-r border-border bg-sidebar text-sidebar-foreground h-screen sticky top-0">
       <div className="p-6">
-        <Link href="/app/dashboard" className="text-xl font-bold tracking-tight text-primary">
-          SponsorshipOS
+        <Link href="/app/dashboard" className="text-primary hover:opacity-80 transition-opacity">
+          <FlowraFull className="flex items-center gap-2" />
         </Link>
       </div>
 

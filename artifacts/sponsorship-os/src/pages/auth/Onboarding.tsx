@@ -49,7 +49,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl bg-card p-8 rounded-xl border border-border shadow-2xl">
-        <h2 className="text-3xl font-bold mb-4 text-center">Welcome to SponsorshipOS</h2>
+        <h2 className="text-3xl font-bold mb-4 text-center">Welcome to Flowra</h2>
         <p className="text-muted-foreground mb-8 text-center">Let's get your account set up.</p>
         
         <Form {...form}>

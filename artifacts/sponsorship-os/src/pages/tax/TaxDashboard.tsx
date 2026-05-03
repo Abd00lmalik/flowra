@@ -62,7 +62,7 @@ export default function TaxDashboard() {
             <div>
               <p className="font-medium text-sm">How Tax Reserve Works</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Each time you receive a payment, SponsorshipOS automatically calculates your configured tax reserve percentage (default 30%) and sets it aside. This ensures you're never caught short at tax time. You can adjust this percentage in Settings → Profile.
+                Each time you receive a payment, Flowra automatically calculates your configured tax reserve percentage (default 30%) and sets it aside. This ensures you're never caught short at tax time. You can adjust this percentage in Settings → Profile.
               </p>
             </div>
           </div>

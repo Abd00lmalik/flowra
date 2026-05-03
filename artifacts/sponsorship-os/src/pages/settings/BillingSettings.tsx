@@ -49,7 +49,7 @@ export default function BillingSettings() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "true") {
-      toast({ title: "Subscription activated!", description: "Welcome to SponsorshipOS Pro." });
+      toast({ title: "Subscription activated!", description: "Welcome to Flowra Pro." });
     }
     if (params.get("cancelled") === "true") {
       toast({ title: "Checkout cancelled", variant: "destructive" });

@@ -86,7 +86,7 @@ export default function IntegrationsSettings() {
     <div className="max-w-2xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Integrations</h1>
-        <p className="text-muted-foreground mt-1">Connect your platforms to unlock the full power of SponsorshipOS.</p>
+        <p className="text-muted-foreground mt-1">Connect your platforms to unlock the full power of Flowra.</p>
       </div>
 
       <div className="space-y-4">

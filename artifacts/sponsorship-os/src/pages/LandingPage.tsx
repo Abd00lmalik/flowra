@@ -1,14 +1,15 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Shield, BarChart3, CheckCircle2 } from "lucide-react";
+import { FlowraFull, FlowraLogo } from "@/components/FlowraLogo";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Header */}
       <header className="container mx-auto px-6 py-6 flex items-center justify-between">
-        <div className="text-2xl font-bold tracking-tighter text-primary">
-          SponsorshipOS
+        <div className="text-primary hover:opacity-80 transition-opacity">
+          <FlowraFull className="flex items-center gap-3" />
         </div>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
@@ -27,7 +28,7 @@ export default function LandingPage() {
             The back-office for <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">creator deals</span>.
           </h1>
           <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed">
-            Stop losing track of deliverables and unpaid invoices. SponsorshipOS extracts data from your contracts, tracks milestones, and automatically generates performance reports for brands.
+            Streamline your creator business. Flowra extracts contract data, tracks milestones, and generates performance reports for brand deals—all in one place.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
@@ -138,7 +139,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border py-12">
         <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} SponsorshipOS. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Flowra. All rights reserved.</p>
         </div>
       </footer>
     </div>
